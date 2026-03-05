@@ -1,6 +1,6 @@
 # Portal
 
-An enterprise **micro-frontend portal** built with Vite Module Federation, React 18, and Quarkus. MFEs are discovered at runtime from a plugin registry API — the shell never needs to be redeployed to add or remove plugins.
+An enterprise **micro-frontend portal** built with Vite Module Federation, React 19, and Quarkus. MFEs are discovered at runtime from a plugin registry API — the shell never needs to be redeployed to add or remove plugins.
 
 ---
 
@@ -43,7 +43,7 @@ An enterprise **micro-frontend portal** built with Vite Module Federation, React
 
 | Layer | Technology |
 |---|---|
-| Frontend framework | React 18, TypeScript |
+| Frontend framework | React 19, TypeScript |
 | Bundler | Vite 5 |
 | Module Federation | `@module-federation/vite` v1.12.0 |
 | Styling | Tailwind CSS 3 · `vite-plugin-css-injected-by-js` |
