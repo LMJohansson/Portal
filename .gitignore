@@ -67,7 +67,6 @@ yarn-error.log
 *.log
 npm-debug.log*
 
-# Generated keys (NEVER commit real keys)
-# Comment out to use dev keys in CI
-# portal-api/src/main/resources/privateKey*.pem
-# portal-api/src/main/resources/publicKey.pem
+# Generated keys — never commit; run `make keys` to generate locally
+portal-api/src/main/resources/privateKey.jwk
+portal-api/src/main/resources/publicKey.jwk

@@ -39,7 +39,7 @@ public class AuthResource {
         summary = "Authenticate and receive a JWT token",
         description = """
             Validates username and password against the user store.
-            On success returns a signed RS256 JWT valid for 8 hours.
+            On success returns a signed EdDSA JWT valid for 8 hours.
             Include the returned `accessToken` in subsequent requests as:
             `Authorization: Bearer <accessToken>`
             """

@@ -34,7 +34,7 @@ An enterprise **micro-frontend portal** built with Vite Module Federation, React
 | Module Federation | **Dynamic** — shell has no static remotes; calls `registerRemotes()` + `loadRemote()` from `@module-federation/runtime` at runtime |
 | Shared React | `singleton: true` on all shared entries; MF2 handles shared-scope initialisation automatically |
 | MFE CSS | `vite-plugin-css-injected-by-js` bundles each MFE's Tailwind CSS into its JS so styles apply when the chunk loads inside the shell |
-| Auth | RSA-2048 JWT signed by the API, verified by MicroProfile JWT on every protected endpoint |
+| Auth | Ed25519 JWT signed by the API, verified by MicroProfile JWT on every protected endpoint |
 | Routing | Each plugin owns a sub-tree under its registered `route` (e.g. `/home/*`, `/dashboard/*`) |
 
 ---
@@ -50,7 +50,7 @@ An enterprise **micro-frontend portal** built with Vite Module Federation, React
 | State | Zustand (persisted to `sessionStorage`) |
 | Data fetching | TanStack Query v5 |
 | Backend | Quarkus 3, Java 25 (code level 21) |
-| Auth | SmallRye JWT, MicroProfile JWT (RSA-2048) |
+| Auth | SmallRye JWT, MicroProfile JWT (Ed25519) |
 | Database | H2 (dev) · PostgreSQL 17 (prod) |
 | ORM | Hibernate ORM Panache |
 | Build | Maven 3.9.12 (`./mvnw`), `frontend-maven-plugin` |
@@ -227,7 +227,7 @@ The shell picks it up on next manifest refresh — no shell rebuild required.
 ```bash
 make k8s-start   # start Minikube with raised file-descriptor limits
 make k8s-pull    # pull third-party base images into Minikube's Docker daemon
-make keys        # generate RSA key pair (skip if keys already exist)
+make keys        # generate Ed25519 key pair (gitignored; required before first run)
 ```
 
 ### Development loop
@@ -274,9 +274,9 @@ Key `application.properties` settings (all overridable by environment variable i
 | `%prod.quarkus.datasource.username` | `portal` | `DB_USER` |
 | `%prod.quarkus.datasource.password` | `portal` | `DB_PASSWORD` |
 
-### RSA keys
+### Ed25519 keys
 
-Pre-generated development keys live in `portal-api/src/main/resources/`. **Replace before any production deployment:**
+Key files are gitignored and must be generated locally before running the app:
 
 ```bash
 make keys
@@ -286,8 +286,8 @@ make keys
 
 ## Security notes
 
-- JWTs are RSA-2048 signed; the private key never leaves the API.
+- JWTs are Ed25519 signed; the private key never leaves the API.
 - The plugin manifest endpoint filters by role — users only see plugins they are permitted to access.
 - `remoteEntry.js` is served with `Cache-Control: no-cache` so plugin updates are reflected immediately.
 - The shell's nginx config proxies `/api/` server-side in Kubernetes, keeping the API off the public network.
-- **Change all default passwords and replace the RSA keys before going to production.**
+- **Change all default passwords and replace the Ed25519 keys before going to production.**

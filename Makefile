@@ -16,12 +16,19 @@ help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 	  awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
-keys: ## Generate RSA key pair for JWT (run once)
-	openssl genrsa -out portal-api/src/main/resources/privateKey.pem 2048
-	openssl pkcs8 -topk8 -inform PEM -in portal-api/src/main/resources/privateKey.pem \
-	  -out portal-api/src/main/resources/privateKey.pkcs8.pem -nocrypt
-	openssl rsa -in portal-api/src/main/resources/privateKey.pem \
-	  -pubout -out portal-api/src/main/resources/publicKey.pem
+keys: ## Generate Ed25519 JWK key pair for JWT (run once)
+	@set -e; \
+	 KEYDIR=portal-api/src/main/resources; \
+	 openssl genpkey -algorithm ed25519 -out "$$KEYDIR/_ed25519.pem" 2>/dev/null; \
+	 D=$$(openssl pkey -in "$$KEYDIR/_ed25519.pem" -outform DER \
+	       | tail -c 32 | base64 | tr '+/' '-_' | tr -d '=\n'); \
+	 X=$$(openssl pkey -in "$$KEYDIR/_ed25519.pem" -pubout -outform DER \
+	       | tail -c 32 | base64 | tr '+/' '-_' | tr -d '=\n'); \
+	 printf '{"kty":"OKP","crv":"Ed25519","d":"%s","x":"%s"}\n' "$$D" "$$X" \
+	   > "$$KEYDIR/privateKey.jwk"; \
+	 printf '{"kty":"OKP","crv":"Ed25519","x":"%s"}\n' "$$X" \
+	   > "$$KEYDIR/publicKey.jwk"; \
+	 rm -f "$$KEYDIR/_ed25519.pem"
 	@echo "Keys generated. REPLACE THESE BEFORE GOING TO PRODUCTION."
 
 install: ## Install all dependencies (Yarn Berry)
