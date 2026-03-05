@@ -1,0 +1,86 @@
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: portal
+
+build:
+  artifacts:
+    - image: portal/portal-api
+      context: .
+      docker:
+        dockerfile: portal-api/Dockerfile
+        pullParent: false
+    - image: portal/mfe-home
+      context: .
+      docker:
+        dockerfile: mfe-home/Dockerfile
+        pullParent: false
+    - image: portal/mfe-dashboard
+      context: .
+      docker:
+        dockerfile: mfe-dashboard/Dockerfile
+        pullParent: false
+    - image: portal/mfe-hello
+      context: .
+      docker:
+        dockerfile: mfe-hello/Dockerfile
+        pullParent: false
+    - image: portal/portal-shell
+      context: .
+      docker:
+        dockerfile: portal-shell/Dockerfile
+        pullParent: false
+  local:
+    push: false          # images stay in Minikube's Docker daemon
+
+# deploy.helm runs helm upgrade AFTER images are built, so setValueTemplates
+# variables (IMAGE_REPO_*, IMAGE_TAG_*) are populated with the real image refs.
+deploy:
+  helm:
+    releases:
+      - name: portal
+        chartPath: helm/portal
+        valuesFiles:
+          - helm/portal/values.yaml
+        # Variable names: artifact image name with / and - replaced by _
+        setValueTemplates:
+          portalApi.image.repository:    "{{.IMAGE_REPO_portal_portal_api}}"
+          portalApi.image.tag:           "{{.IMAGE_TAG_portal_portal_api}}"
+          mfeHome.image.repository:      "{{.IMAGE_REPO_portal_mfe_home}}"
+          mfeHome.image.tag:             "{{.IMAGE_TAG_portal_mfe_home}}"
+          mfeDashboard.image.repository: "{{.IMAGE_REPO_portal_mfe_dashboard}}"
+          mfeDashboard.image.tag:        "{{.IMAGE_TAG_portal_mfe_dashboard}}"
+          mfeHello.image.repository:     "{{.IMAGE_REPO_portal_mfe_hello}}"
+          mfeHello.image.tag:            "{{.IMAGE_TAG_portal_mfe_hello}}"
+          portalShell.image.repository:  "{{.IMAGE_REPO_portal_portal_shell}}"
+          portalShell.image.tag:         "{{.IMAGE_TAG_portal_portal_shell}}"
+
+# Port-forwards mirror Docker Compose ports so MF remote entry URLs (localhost:3001/3002)
+# still resolve correctly from the browser during development.
+# NOTE: these resource names assume Helm release name = "portal" (→ fullname = "portal")
+portForward:
+  - resourceType: service
+    resourceName: portal-shell
+    namespace: default
+    port: 80
+    localPort: 3000
+  - resourceType: service
+    resourceName: portal-mfe-home
+    namespace: default
+    port: 80
+    localPort: 3001
+  - resourceType: service
+    resourceName: portal-mfe-dashboard
+    namespace: default
+    port: 80
+    localPort: 3002
+  - resourceType: service
+    resourceName: portal-mfe-hello
+    namespace: default
+    port: 80
+    localPort: 3003
+  - resourceType: service
+    resourceName: portal-api
+    namespace: default
+    port: 8080
+    localPort: 8080

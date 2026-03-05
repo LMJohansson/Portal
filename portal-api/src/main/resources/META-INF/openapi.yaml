@@ -1,0 +1,646 @@
+openapi: 3.0.3
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Enterprise Portal API — OpenAPI 3.0 Specification
+#
+# This file is the CONTRACT-FIRST specification for the portal-api service.
+# It is served by Quarkus SmallRye OpenAPI at:
+#   GET /q/openapi          (YAML)
+#   GET /q/openapi?format=json (JSON)
+# Swagger UI is available at:
+#   GET /swagger-ui
+#
+# The annotations in the Java source (MicroProfile OpenAPI) are merged on top
+# of this base document at build time.  Keep this file in sync with the code.
+# ─────────────────────────────────────────────────────────────────────────────
+
+info:
+  title: Enterprise Portal API
+  version: 1.0.0
+  description: |
+    REST API for the **Enterprise Micro-Frontend Portal**.
+
+    ## Overview
+    The portal exposes two primary resource groups:
+
+    | Resource        | Base path         | Auth required |
+    |-----------------|-------------------|---------------|
+    | Authentication  | `/api/auth`       | No            |
+    | Plugin Registry | `/api/plugins`    | ADMIN role    |
+    | Plugin Manifest | `/api/plugins/manifest` | Optional |
+
+    ## Security
+    Protected endpoints require an `Authorization: Bearer <jwt>` header.
+    Obtain a token via `POST /api/auth/login`.
+
+    ## Roles
+    | Role    | Permissions                               |
+    |---------|-------------------------------------------|
+    | `USER`  | Read plugin manifest                      |
+    | `ADMIN` | All USER permissions + full plugin CRUD   |
+
+  contact:
+    name: Portal Engineering Team
+    email: portal-engineering@example.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:{port}
+    description: Local development (Quarkus dev mode)
+    variables:
+      port:
+        default: "8080"
+        description: Quarkus HTTP port
+  - url: https://api.portal.example.com
+    description: Production
+
+# ─── Security ─────────────────────────────────────────────────────────────────
+security: []   # default: unauthenticated; overridden per-operation
+
+components:
+  securitySchemes:
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        RS256-signed JWT issued by `POST /api/auth/login`.
+        Default lifespan: **8 hours** (28 800 seconds).
+        Claims included: `sub` (username), `groups` (roles), `email`, `fullName`.
+
+  # ─── Reusable schemas ───────────────────────────────────────────────────────
+  schemas:
+
+    Plugin:
+      type: object
+      description: A registered micro-frontend plugin in the portal registry
+      required:
+        - pluginId
+        - name
+        - remoteUrl
+        - scope
+        - module
+        - route
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          description: Surrogate primary key
+          example: 1
+        pluginId:
+          type: string
+          description: >
+            Unique slug identifier. Must be lowercase alphanumeric with hyphens.
+            Follows npm package-name conventions.
+          pattern: "^[a-z][a-z0-9-]*$"
+          maxLength: 100
+          example: mfe-reports
+        name:
+          type: string
+          description: Human-readable display name shown in the sidebar navigation
+          maxLength: 100
+          example: Reports
+        description:
+          type: string
+          description: Optional description shown in the admin plugin registry
+          maxLength: 500
+          example: Financial reporting and data export micro-frontend
+        remoteUrl:
+          type: string
+          description: Absolute URL to the Module Federation remoteEntry.js file
+          example: http://localhost:3003/remoteEntry.js
+        scope:
+          type: string
+          description: >
+            Module Federation scope name.
+            Must exactly match the `name` field in the MFE's
+            vite.config federation plugin configuration.
+          maxLength: 100
+          example: mfe_reports
+        module:
+          type: string
+          description: >
+            Exposed module path as declared in the MFE's `exposes` config.
+          maxLength: 100
+          example: ./Plugin
+        route:
+          type: string
+          description: React Router path at which this plugin is mounted in the shell
+          maxLength: 200
+          example: /reports
+        icon:
+          type: string
+          description: Lucide-react icon name rendered in the sidebar navigation
+          maxLength: 50
+          example: bar-chart
+        sortOrder:
+          type: integer
+          description: Ascending sort order for sidebar display. Lower values appear first.
+          default: 100
+          example: 3
+        enabled:
+          type: boolean
+          description: Whether this plugin is active and included in the manifest
+          default: true
+          example: true
+        roles:
+          type: string
+          description: >
+            Comma-separated roles allowed to see and load this plugin.
+            Empty or null means unrestricted.
+          maxLength: 500
+          example: "USER,ADMIN"
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: UTC timestamp when the plugin was registered
+          example: "2026-01-15T10:30:00"
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: UTC timestamp of the last modification
+          example: "2026-02-01T08:00:00"
+      example:
+        id: 1
+        pluginId: mfe-home
+        name: Home
+        description: Portal home page
+        remoteUrl: http://localhost:3001/remoteEntry.js
+        scope: mfe_home
+        module: ./Plugin
+        route: /home
+        icon: home
+        sortOrder: 1
+        enabled: true
+        roles: "USER,ADMIN"
+        createdAt: "2026-01-15T10:00:00"
+        updatedAt: "2026-01-15T10:00:00"
+
+    TokenRequest:
+      type: object
+      description: Credentials for obtaining a JWT access token
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: Portal username
+          minLength: 3
+          maxLength: 50
+          example: admin
+        password:
+          type: string
+          format: password
+          description: User password
+          minLength: 6
+          maxLength: 100
+          example: admin123
+
+    TokenResponse:
+      type: object
+      description: Successful authentication response containing a signed JWT
+      properties:
+        accessToken:
+          type: string
+          description: "RS256-signed JWT. Include as `Authorization: Bearer <token>`."
+          example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+        tokenType:
+          type: string
+          description: Always "Bearer"
+          example: Bearer
+        expiresIn:
+          type: integer
+          format: int64
+          description: Token validity in seconds
+          example: 28800
+        username:
+          type: string
+          description: Authenticated user's username
+          example: admin
+        fullName:
+          type: string
+          description: Authenticated user's display name
+          example: Admin User
+        email:
+          type: string
+          format: email
+          description: Authenticated user's email address
+          example: admin@portal.example.com
+        roles:
+          type: array
+          description: Roles granted to this user
+          items:
+            type: string
+          example: ["ADMIN", "USER"]
+
+    ErrorResponse:
+      type: object
+      description: Standard error payload returned on 4xx / 5xx responses
+      properties:
+        message:
+          type: string
+          description: Human-readable error message
+          example: Invalid credentials
+
+  # ─── Reusable responses ──────────────────────────────────────────────────────
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: "Not authorized — provide a valid Bearer token"
+
+    Forbidden:
+      description: Authenticated user does not have the required role
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: "Forbidden — ADMIN role required"
+
+    NotFound:
+      description: Requested resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: "Plugin not found: 99"
+
+    BadRequest:
+      description: Request body failed validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: "pluginId: must match '^[a-z][a-z0-9-]*$'"
+
+  # ─── Reusable parameters ─────────────────────────────────────────────────────
+  parameters:
+    pluginId:
+      name: id
+      in: path
+      required: true
+      description: Plugin surrogate primary key
+      schema:
+        type: integer
+        format: int64
+      example: 1
+
+# ─── Tags ────────────────────────────────────────────────────────────────────
+tags:
+  - name: Authentication
+    description: |
+      Login endpoint that exchanges username + password for a signed JWT.
+      No token is required to call these endpoints.
+  - name: Plugin Registry
+    description: |
+      CRUD management of the portal's micro-frontend plugin registry.
+      The `manifest` sub-resource is public; all other operations require
+      an `ADMIN` JWT.
+
+# ─── Paths ───────────────────────────────────────────────────────────────────
+paths:
+
+  # ── Authentication ──────────────────────────────────────────────────────────
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      operationId: login
+      summary: Authenticate and receive a JWT token
+      description: |
+        Validates username/password against the user store.
+        On success returns a signed **RS256 JWT** valid for 8 hours.
+
+        Use the returned `accessToken` in subsequent requests:
+        ```
+        Authorization: Bearer <accessToken>
+        ```
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+            examples:
+              admin:
+                summary: Admin credentials
+                value:
+                  username: admin
+                  password: admin123
+              user:
+                summary: Regular user credentials
+                value:
+                  username: user
+                  password: user123
+      responses:
+        "200":
+          description: Authentication successful — JWT returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                accessToken: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+                tokenType: Bearer
+                expiresIn: 28800
+                username: admin
+                fullName: Admin User
+                email: admin@portal.example.com
+                roles: [ADMIN, USER]
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Invalid credentials
+
+  # ── Plugin Registry ─────────────────────────────────────────────────────────
+
+  /api/plugins/manifest:
+    get:
+      tags: [Plugin Registry]
+      operationId: getPluginManifest
+      summary: Get plugin manifest
+      description: |
+        Returns the list of **enabled** plugins visible to the caller.
+
+        - **Unauthenticated:** returns all enabled plugins.
+        - **Authenticated (valid JWT):** additionally filters to plugins
+          whose `roles` field overlaps with the token's `groups` claim.
+
+        The portal shell calls this endpoint on startup to build navigation
+        and register dynamic React Router routes via Module Federation.
+      security: []   # public endpoint — JWT is optional
+      responses:
+        "200":
+          description: Plugin manifest (may be an empty array)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plugin'
+              examples:
+                populated:
+                  summary: Two plugins visible to an authenticated USER
+                  value:
+                    - id: 1
+                      pluginId: mfe-home
+                      name: Home
+                      remoteUrl: http://localhost:3001/remoteEntry.js
+                      scope: mfe_home
+                      module: ./Plugin
+                      route: /home
+                      icon: home
+                      sortOrder: 1
+                      enabled: true
+                      roles: "USER,ADMIN"
+                      createdAt: "2026-01-15T10:00:00"
+                      updatedAt: "2026-01-15T10:00:00"
+                    - id: 2
+                      pluginId: mfe-dashboard
+                      name: Dashboard
+                      remoteUrl: http://localhost:3002/remoteEntry.js
+                      scope: mfe_dashboard
+                      module: ./Plugin
+                      route: /dashboard
+                      icon: bar-chart
+                      sortOrder: 2
+                      enabled: true
+                      roles: "USER,ADMIN"
+                      createdAt: "2026-01-15T10:00:00"
+                      updatedAt: "2026-01-15T10:00:00"
+                empty:
+                  summary: Empty manifest (no enabled plugins)
+                  value: []
+
+  /api/plugins:
+    get:
+      tags: [Plugin Registry]
+      operationId: listAllPlugins
+      summary: List all plugins
+      description: |
+        Returns **every** plugin regardless of `enabled` status.
+        Intended for admin management UI. Requires `ADMIN` role.
+      security:
+        - jwt: []
+      responses:
+        "200":
+          description: Full plugin list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plugin'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Plugin Registry]
+      operationId: createPlugin
+      summary: Register a new plugin
+      description: |
+        Adds a micro-frontend to the portal registry.
+        The shell picks up the new plugin on the next manifest refresh.
+        `pluginId` must be **unique** across the registry.
+      security:
+        - jwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Plugin'
+            examples:
+              mfe-reports:
+                summary: Register a Reports MFE
+                value:
+                  pluginId: mfe-reports
+                  name: Reports
+                  description: Financial reporting micro-frontend
+                  remoteUrl: http://localhost:3003/remoteEntry.js
+                  scope: mfe_reports
+                  module: ./Plugin
+                  route: /reports
+                  icon: bar-chart
+                  sortOrder: 3
+                  enabled: true
+                  roles: "USER,ADMIN"
+      responses:
+        "201":
+          description: Plugin successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plugin'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "409":
+          description: "`pluginId` already exists in the registry"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Plugin ID already exists: mfe-reports"
+
+  /api/plugins/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pluginId'
+
+    get:
+      tags: [Plugin Registry]
+      operationId: getPlugin
+      summary: Get plugin by ID
+      description: Fetches a single plugin by its surrogate primary key.
+      security:
+        - jwt: []
+      responses:
+        "200":
+          description: Plugin found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plugin'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Plugin Registry]
+      operationId: updatePlugin
+      summary: Update plugin
+      description: |
+        Replaces all mutable fields of an existing plugin.
+        `pluginId` **cannot** be changed after registration.
+      security:
+        - jwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Plugin'
+            examples:
+              update-url:
+                summary: Update remote URL after redeployment
+                value:
+                  pluginId: mfe-reports
+                  name: Reports
+                  remoteUrl: https://cdn.example.com/mfe-reports/v2/remoteEntry.js
+                  scope: mfe_reports
+                  module: ./Plugin
+                  route: /reports
+                  icon: bar-chart
+                  sortOrder: 3
+                  enabled: true
+                  roles: "USER,ADMIN"
+      responses:
+        "200":
+          description: Plugin updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plugin'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Plugin Registry]
+      operationId: deletePlugin
+      summary: Delete plugin
+      description: |
+        Permanently removes the plugin from the registry.
+        The shell will stop routing to it on the next manifest refresh.
+        This action is **irreversible** — re-registration requires a new POST.
+      security:
+        - jwt: []
+      responses:
+        "204":
+          description: Plugin deleted — no content returned
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/plugins/{id}/toggle:
+    parameters:
+      - $ref: '#/components/parameters/pluginId'
+
+    patch:
+      tags: [Plugin Registry]
+      operationId: togglePlugin
+      summary: Toggle plugin enabled/disabled
+      description: |
+        Flips the `enabled` flag without requiring a full PUT body.
+
+        - **Disabling** removes the plugin from the manifest immediately;
+          authenticated sessions that already loaded it retain their
+          in-memory copy until they refresh.
+        - **Enabling** makes it available on the next manifest fetch.
+      security:
+        - jwt: []
+      responses:
+        "200":
+          description: Plugin toggled — returns the updated plugin state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plugin'
+              examples:
+                disabled:
+                  summary: Plugin was enabled, now disabled
+                  value:
+                    id: 2
+                    pluginId: mfe-dashboard
+                    name: Dashboard
+                    enabled: false
+                    remoteUrl: http://localhost:3002/remoteEntry.js
+                    scope: mfe_dashboard
+                    module: ./Plugin
+                    route: /dashboard
+                    icon: bar-chart
+                    sortOrder: 2
+                    roles: "USER,ADMIN"
+                    createdAt: "2026-01-15T10:00:00"
+                    updatedAt: "2026-02-26T09:15:00"
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'

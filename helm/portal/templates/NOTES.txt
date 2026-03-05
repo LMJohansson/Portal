@@ -1,0 +1,49 @@
+Portal {{ .Chart.AppVersion }} deployed as release "{{ .Release.Name }}"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Development with Skaffold (recommended)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  eval $(minikube docker-env)
+  skaffold dev
+
+  Skaffold port-forwards these automatically:
+    Portal Shell   →  http://localhost:3000
+    MFE Home       →  http://localhost:3001
+    MFE Dashboard  →  http://localhost:3002
+    API / Swagger  →  http://localhost:8080/swagger-ui
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Manual kubectl port-forward
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  kubectl port-forward svc/{{ include "portal.fullname" . }}-shell        3000:80  &
+  kubectl port-forward svc/{{ include "portal.fullname" . }}-mfe-home     3001:80  &
+  kubectl port-forward svc/{{ include "portal.fullname" . }}-mfe-dashboard 3002:80 &
+  kubectl port-forward svc/{{ include "portal.fullname" . }}-api          8080:8080 &
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  NodePort access (no Skaffold)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  In values.yaml set, e.g.:
+    service.shell.type: NodePort
+    service.shell.nodePort: 30000
+    service.mfeHome.type: NodePort
+    service.mfeHome.nodePort: 30001
+    service.mfeDashboard.type: NodePort
+    service.mfeDashboard.nodePort: 30002
+
+  Then: minikube service {{ include "portal.fullname" . }}-shell
+
+  NOTE: MFE NodePorts (30001/30002) must be reachable from the browser
+  because Module Federation loads remote entries client-side.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Useful commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  kubectl get pods
+  kubectl logs -f deployment/{{ include "portal.fullname" . }}-api
+  helm upgrade portal ./helm/portal --reuse-values
+  helm uninstall portal

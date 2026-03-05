@@ -1,0 +1,112 @@
+nameOverride: ""
+fullnameOverride: ""
+
+# ── Image pull policy ─────────────────────────────────────────────────────
+# Use IfNotPresent when images are built locally into Minikube's Docker daemon.
+# Change to Always for remote registry deployments.
+imagePullPolicy: IfNotPresent
+
+# ── Backend: Quarkus API ─────────────────────────────────────────────────
+portalApi:
+  image:
+    repository: portal/portal-api
+    tag: latest
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ── Frontend: MFE Home ────────────────────────────────────────────────────
+mfeHome:
+  image:
+    repository: portal/mfe-home
+    tag: latest
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+# ── Frontend: MFE Dashboard ───────────────────────────────────────────────
+mfeDashboard:
+  image:
+    repository: portal/mfe-dashboard
+    tag: latest
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+# ── Frontend: MFE Hello ───────────────────────────────────────────────────
+mfeHello:
+  image:
+    repository: portal/mfe-hello
+    tag: latest
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+# ── Frontend: Portal Shell ────────────────────────────────────────────────
+portalShell:
+  image:
+    repository: portal/portal-shell
+    tag: latest
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+# ── PostgreSQL ────────────────────────────────────────────────────────────
+postgres:
+  image: docker.io/library/postgres:17
+  storage: 1Gi
+
+# ── Application configuration ─────────────────────────────────────────────
+db:
+  name: portal
+  user: portal
+  # WARNING: change this before deploying to any non-local environment
+  password: portal
+
+jwt:
+  issuer: https://portal.example.com
+
+# ── Service types ─────────────────────────────────────────────────────────
+# With Skaffold: keep all as ClusterIP — Skaffold port-forwards handle access.
+# For standalone Minikube (no Skaffold): set type to NodePort.
+#   shell.nodePort:          30000  (→ http://<minikube-ip>:30000)
+#   mfeHome.nodePort:        30001  (→ http://<minikube-ip>:30001  — needed for MF remote entry)
+#   mfeDashboard.nodePort:   30002  (→ http://<minikube-ip>:30002  — needed for MF remote entry)
+service:
+  shell:
+    type: ClusterIP
+    nodePort: null
+  mfeHome:
+    type: ClusterIP
+    nodePort: null
+  mfeDashboard:
+    type: ClusterIP
+    nodePort: null
+  mfeHello:
+    type: ClusterIP
+    nodePort: null

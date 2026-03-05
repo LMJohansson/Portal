@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "portal.fullname" . }}-shell
+  labels:
+    {{- include "portal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: portal-shell
+spec:
+  replicas: {{ .Values.portalShell.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "portal.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: portal-shell
+  template:
+    metadata:
+      labels:
+        {{- include "portal.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: portal-shell
+    spec:
+      containers:
+        - name: portal-shell
+          image: "{{ .Values.portalShell.image.repository }}:{{ .Values.portalShell.image.tag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: shell.conf
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.portalShell.resources | nindent 12 }}
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: {{ include "portal.fullname" . }}-nginx

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "portal.fullname" . }}-shell
+  labels:
+    {{- include "portal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: portal-shell
+spec:
+  type: {{ .Values.service.shell.type }}
+  selector:
+    {{- include "portal.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: portal-shell
+  ports:
+    - port: 80
+      targetPort: 8080
+      {{- if and (eq .Values.service.shell.type "NodePort") .Values.service.shell.nodePort }}
+      nodePort: {{ .Values.service.shell.nodePort }}
+      {{- end }}

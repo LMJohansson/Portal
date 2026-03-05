@@ -1,0 +1,37 @@
+# Version control
+.git/
+.gitignore
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Legacy Gradle cache
+.gradle/
+
+# Node packages — rebuilt inside each Docker stage
+node_modules/
+
+# Yarn Berry — cache and state files not needed in Docker build context
+# (.yarn/releases/ IS needed and must not be excluded)
+.yarn/cache/
+.yarn/install-state.gz
+
+# Build outputs — rebuilt inside each Docker stage
+portal-shell/dist/
+mfe-home/dist/
+mfe-dashboard/dist/
+mfe-hello/dist/
+portal-api/target/
+
+# K8s / deployment tooling
+helm/
+skaffold.yaml
+docker-compose.yml
+Makefile
+
+# Docs
+*.md

@@ -1,0 +1,25 @@
+####
+# Build:
+#   ./mvnw -pl portal-api package -DskipTests
+#   docker build -f src/main/docker/Dockerfile.jvm -t portal/portal-api .
+#
+# Run:
+#   docker run -p 8080:8080 portal/portal-api
+####
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /work/
+
+# Copy quarkus-app (fast-jar layout)
+COPY --chown=1001:root target/quarkus-app/lib/ /deployments/lib/
+COPY --chown=1001:root target/quarkus-app/*.jar /deployments/
+COPY --chown=1001:root target/quarkus-app/app/ /deployments/app/
+COPY --chown=1001:root target/quarkus-app/quarkus/ /deployments/quarkus/
+
+EXPOSE 8080
+USER 1001
+
+ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar $JAVA_APP_JAR"]

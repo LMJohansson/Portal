@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+           https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.portal</groupId>
+  <artifactId>portal</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <modules>
+    <module>mfe-home</module>
+    <module>mfe-dashboard</module>
+    <module>mfe-hello</module>
+    <module>portal-shell</module>
+    <module>portal-api</module>
+  </modules>
+
+  <properties>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <quarkus.platform.version>3.27.2</quarkus.platform.version>
+    <node.version>v24.14.0</node.version>
+    <yarn.version>v1.22.22</yarn.version>
+    <frontend-maven-plugin.version>1.15.1</frontend-maven-plugin.version>
+    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
+  </properties>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <!-- Shared frontend-maven-plugin config: Node installed once to project root -->
+        <plugin>
+          <groupId>com.github.eirslett</groupId>
+          <artifactId>frontend-maven-plugin</artifactId>
+          <version>${frontend-maven-plugin.version}</version>
+          <configuration>
+            <installDirectory>${maven.multiModuleProjectDirectory}</installDirectory>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${maven-failsafe-plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <!-- Install Node + Yarn once at root; Yarn Berry runs from bundled .yarn/releases -->
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>install-node-and-yarn</id>
+            <goals>
+              <goal>install-node-and-yarn</goal>
+            </goals>
+            <phase>initialize</phase>
+            <configuration>
+              <nodeVersion>${node.version}</nodeVersion>
+              <yarnVersion>${yarn.version}</yarnVersion>
+            </configuration>
+          </execution>
+          <execution>
+            <id>yarn-install</id>
+            <goals>
+              <goal>yarn</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <arguments>run yarn:install</arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

@@ -1,0 +1,21 @@
+{
+  "name": "portal",
+  "private": true,
+  "packageManager": "yarn@4.12.0",
+  "workspaces": [
+    "portal-shell",
+    "mfe-home",
+    "mfe-dashboard",
+    "mfe-hello"
+  ],
+  "scripts": {
+    "yarn:install": "node .yarn/releases/yarn-4.12.0.cjs install --immutable",
+    "build:mfe-home": "node .yarn/releases/yarn-4.12.0.cjs workspace mfe-home run build",
+    "build:mfe-dashboard": "node .yarn/releases/yarn-4.12.0.cjs workspace mfe-dashboard run build",
+    "build:mfe-hello": "node .yarn/releases/yarn-4.12.0.cjs workspace mfe-hello run build",
+    "build:shell": "node .yarn/releases/yarn-4.12.0.cjs workspace portal-shell run build"
+  },
+  "devDependencies": {
+    "vite-plugin-css-injected-by-js": "^4.0.1"
+  }
+}

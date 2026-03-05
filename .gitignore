@@ -1,0 +1,73 @@
+# Claude
+.claude
+
+# Maven
+target/
+out/
+*.class
+
+# Helm
+helm/portal/charts/
+helm/portal/Chart.lock
+
+# Skaffold
+.skaffold/
+
+# Java
+*.jar
+*.war
+*.ear
+
+# Node
+node_modules/
+dist/
+.vite/
+*.local
+
+# @module-federation/vite generated type temp files
+.__mf__temp/
+
+# Node.js runtime downloaded by frontend-maven-plugin
+node/
+
+# TypeScript / Vite build artefacts (compiled from .ts config files)
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+
+# Accidental ~ directory
+~/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Quarkus
+.quarkus/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Yarn Berry (.yarn/releases/ must NOT be ignored — it holds the bundled binary)
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+yarn-error.log
+
+# Logs
+*.log
+npm-debug.log*
+
+# Generated keys (NEVER commit real keys)
+# Comment out to use dev keys in CI
+# portal-api/src/main/resources/privateKey*.pem
+# portal-api/src/main/resources/publicKey.pem

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/portal-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enterprise Portal</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!--
+      main.tsx uses a dynamic import to bootstrap the app.
+      This is required for Module Federation to work correctly:
+      shared modules must be initialized before the app boots.
+    -->
+    <script>
+      // Catch JS errors that prevent React from mounting
+      window.__portalErrors = [];
+      function fmtErr(e) {
+        var parts = [];
+        if (e.type === 'unhandledrejection') {
+          var r = e.reason;
+          parts.push('UnhandledRejection: ' + (r && r.stack ? r.stack : String(r)));
+        } else {
+          parts.push('[' + (e.filename || '?') + ':' + e.lineno + ':' + e.colno + ']');
+          parts.push(e.message || '(no message)');
+          if (e.error && e.error.stack) parts.push(e.error.stack);
+        }
+        return parts.join('\n');
+      }
+      window.addEventListener('error', function(e) {
+        window.__portalErrors.push(fmtErr(e));
+        setTimeout(function() {
+          if (!document.getElementById('root').hasChildNodes()) {
+            document.getElementById('root').innerHTML =
+              '<div style="font-family:monospace;white-space:pre-wrap;padding:2rem;color:#dc2626;background:#fef2f2;margin:2rem;border-radius:8px;border:1px solid #fca5a5">' +
+              '<b>Portal failed to start</b>\n\n' + window.__portalErrors.join('\n\n---\n\n') + '</div>';
+          }
+        }, 2000);
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        window.__portalErrors.push(fmtErr(e));
+        setTimeout(function() {
+          if (!document.getElementById('root').hasChildNodes()) {
+            document.getElementById('root').innerHTML =
+              '<div style="font-family:monospace;white-space:pre-wrap;padding:2rem;color:#dc2626;background:#fef2f2;margin:2rem;border-radius:8px;border:1px solid #fca5a5">' +
+              '<b>Portal failed to start</b>\n\n' + window.__portalErrors.join('\n\n---\n\n') + '</div>';
+          }
+        }, 2000);
+      });
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

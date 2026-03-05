@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "portal.fullname" . }}-api
+  labels:
+    {{- include "portal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: portal-api
+spec:
+  replicas: {{ .Values.portalApi.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "portal.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: portal-api
+  template:
+    metadata:
+      labels:
+        {{- include "portal.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: portal-api
+    spec:
+      initContainers:
+        - name: wait-postgres
+          image: {{ .Values.postgres.image }}
+          command:
+            - sh
+            - -c
+            - |
+              until PGPASSWORD=$DB_PASSWORD psql -h {{ include "portal.fullname" . }}-postgres -U $DB_USER -d {{ .Values.db.name }} -c "SELECT 1" > /dev/null 2>&1; do
+                echo "portal-postgres:5432 - no response"
+                echo "waiting for postgres..."
+                sleep 2
+              done
+          env:
+            - name: DB_USER
+              value: {{ .Values.db.user | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "portal.fullname" . }}-db
+                  key: password
+      containers:
+        - name: portal-api
+          image: "{{ .Values.portalApi.image.repository }}:{{ .Values.portalApi.image.tag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_URL
+              value: "jdbc:postgresql://{{ include "portal.fullname" . }}-postgres:5432/{{ .Values.db.name }}"
+            - name: DB_USER
+              value: {{ .Values.db.user | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "portal.fullname" . }}-db
+                  key: password
+            - name: JWT_ISSUER
+              value: {{ .Values.jwt.issuer | quote }}
+            - name: QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION
+              value: drop-and-create
+          readinessProbe:
+            httpGet:
+              path: /q/health/ready
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /q/health/live
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.portalApi.resources | nindent 12 }}
