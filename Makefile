@@ -85,4 +85,4 @@ k8s-delete: ## Remove the Helm release from the cluster
 	skaffold delete
 
 k8s-status: ## Show pod and service status
-	kubectl get pods,svc -l app.kubernetes.io/instance=portal
+	kubectl get pods,svc -n portal -l app.kubernetes.io/instance=portal

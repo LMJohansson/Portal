@@ -40,6 +40,8 @@ deploy:
     releases:
       - name: portal
         chartPath: helm/portal
+        namespace: portal
+        createNamespace: true
         valuesFiles:
           - helm/portal/values.yaml
         # Variable names: artifact image name with / and - replaced by _
@@ -61,26 +63,26 @@ deploy:
 portForward:
   - resourceType: service
     resourceName: portal-shell
-    namespace: default
+    namespace: portal
     port: 80
     localPort: 3000
   - resourceType: service
     resourceName: portal-mfe-home
-    namespace: default
+    namespace: portal
     port: 80
     localPort: 3001
   - resourceType: service
     resourceName: portal-mfe-dashboard
-    namespace: default
+    namespace: portal
     port: 80
     localPort: 3002
   - resourceType: service
     resourceName: portal-mfe-hello
-    namespace: default
+    namespace: portal
     port: 80
     localPort: 3003
   - resourceType: service
     resourceName: portal-api
-    namespace: default
+    namespace: portal
     port: 8080
     localPort: 8080
