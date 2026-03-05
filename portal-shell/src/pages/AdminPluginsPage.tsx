@@ -8,7 +8,7 @@ export default function AdminPluginsPage() {
   const qc = useQueryClient()
   const [showCreate, setShowCreate] = useState(false)
 
-  const { data: plugins = [], isLoading } = useQuery({
+  const { data: plugins = [], isLoading, isError, error } = useQuery({
     queryKey: ['plugins', 'all'],
     queryFn: fetchAllPlugins,
   })
@@ -26,6 +26,17 @@ export default function AdminPluginsPage() {
   })
 
   if (isLoading) return <div className="animate-pulse text-gray-400">Loading plugins…</div>
+  if (isError) {
+    const code = (error as any)?.response?.status ?? 'network error'
+    return (
+      <div className="text-red-500 p-4">
+        Failed to load plugin registry (HTTP {String(code)}).{' '}
+        {code === 401 && 'Token rejected — try refreshing the page.'}
+        {code === 403 && 'Access denied — your token may be missing the ADMIN role claim.'}
+        {code === 'network error' && 'Check that the API is running.'}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "portal.fullname" . }}-keycloak
+  labels:
+    {{- include "portal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "portal.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: keycloak
+  template:
+    metadata:
+      labels:
+        {{- include "portal.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: {{ .Values.keycloak.image }}
+          imagePullPolicy: IfNotPresent
+          args: ["start-dev", "--import-realm"]
+          env:
+            - name: KEYCLOAK_ADMIN
+              value: "admin"
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: {{ .Values.keycloak.adminPassword | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+          # Probe the realm endpoint on the main HTTP port — guaranteed available in
+          # start-dev mode and confirms the realm JSON has been fully imported.
+          readinessProbe:
+            httpGet:
+              path: /realms/portal
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 24
+          # Lenient TCP liveness — just confirms the JVM hasn't hung; avoids
+          # killing the pod while the realm import is still in progress.
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 6
+          volumeMounts:
+            - name: realm
+              mountPath: /opt/keycloak/data/import
+          resources:
+            {{- toYaml .Values.keycloak.resources | nindent 12 }}
+      volumes:
+        - name: realm
+          configMap:
+            name: {{ include "portal.fullname" . }}-keycloak-realm

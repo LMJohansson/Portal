@@ -108,7 +108,7 @@ class OpenApiSpecTest {
 
     @Test
     @Order(6)
-    @DisplayName("Spec contains required tags: Authentication and Plugin Registry")
+    @DisplayName("Spec contains required tag: Plugin Registry")
     @Operation(summary = "All @Tag declarations are present in the generated spec")
     @APIResponse(responseCode = "200", description = "tags array contains expected entries")
     void specContainsRequiredTags() {
@@ -116,24 +116,10 @@ class OpenApiSpecTest {
             .when().get("/q/openapi?format=json")
             .then()
             .statusCode(200)
-            .body("tags.name", hasItems("Authentication", "Plugin Registry"));
+            .body("tags.name", hasItems("Plugin Registry"));
     }
 
     // ── Paths ─────────────────────────────────────────────────────────────────
-
-    @Test
-    @Order(7)
-    @DisplayName("Spec exposes POST /api/auth/login")
-    @Operation(summary = "Login path is present in spec")
-    @APIResponse(responseCode = "200", description = "path /api/auth/login → post exists")
-    void specExposesLoginPath() {
-        given()
-            .when().get("/q/openapi?format=json")
-            .then()
-            .statusCode(200)
-            .body("paths.'/api/auth/login'.post", notNullValue())
-            .body("paths.'/api/auth/login'.post.tags", hasItem("Authentication"));
-    }
 
     @Test
     @Order(8)
@@ -196,24 +182,6 @@ class OpenApiSpecTest {
             .body("components.schemas.Plugin.properties.remoteUrl", notNullValue())
             .body("components.schemas.Plugin.properties.scope", notNullValue())
             .body("components.schemas.Plugin.properties.route", notNullValue());
-    }
-
-    @Test
-    @Order(12)
-    @DisplayName("Spec defines TokenRequest and TokenResponse schemas")
-    @Operation(summary = "Auth schemas are present in components.schemas")
-    @APIResponse(responseCode = "200", description = "TokenRequest and TokenResponse schemas exist")
-    void specDefinesAuthSchemas() {
-        given()
-            .when().get("/q/openapi?format=json")
-            .then()
-            .statusCode(200)
-            .body("components.schemas.TokenRequest", notNullValue())
-            .body("components.schemas.TokenResponse", notNullValue())
-            .body("components.schemas.TokenRequest.properties.username", notNullValue())
-            .body("components.schemas.TokenRequest.properties.password", notNullValue())
-            .body("components.schemas.TokenResponse.properties.accessToken", notNullValue())
-            .body("components.schemas.TokenResponse.properties.roles", notNullValue());
     }
 
     // ── Swagger UI ────────────────────────────────────────────────────────────

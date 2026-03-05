@@ -1,6 +1,6 @@
 package com.portal.plugin;
 
-import com.portal.auth.AuthResource.ErrorResponse;
+import com.portal.config.ErrorResponse;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;

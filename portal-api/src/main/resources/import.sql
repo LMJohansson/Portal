@@ -1,10 +1,4 @@
--- Default users (passwords are bcrypt hashed: "admin123" and "user123")
-INSERT INTO portal_user (username, password_hash, full_name, email, roles, enabled, created_at)
-VALUES
-    ('admin', '$2a$10$GeKsQmfn6D.LkCZCU7ExG.Bq/OPpCbRY9TWeMTCFJzX/liZzvVFEy', 'Admin User',    'admin@portal.example.com', 'ADMIN,USER', true, CURRENT_TIMESTAMP),
-    ('user',  '$2a$10$DjfeIpXcxPzIPlOqgjQul.jgNS6Rck0yew/pZQQrti55WTuW8ty0S', 'Regular User', 'user@portal.example.com',  'USER',       true, CURRENT_TIMESTAMP);
-
--- Default plugin registry
+-- Plugin registry (users are managed by Keycloak)
 INSERT INTO plugin (plugin_id, name, description, remote_url, scope, module, route, icon, sort_order, enabled, roles, created_at, updated_at)
 VALUES
     ('mfe-home',      'Home',      'Portal home page',    'http://localhost:3001/remoteEntry.js', 'mfe_home',      './Plugin', '/home',      'home',      1, true, 'USER,ADMIN', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
