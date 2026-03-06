@@ -16,6 +16,7 @@
     "build:shell": "node .yarn/releases/yarn-4.12.0.cjs workspace portal-shell run build"
   },
   "devDependencies": {
+    "vite": "^5.2.8",
     "vite-plugin-css-injected-by-js": "^4.0.1"
   }
 }

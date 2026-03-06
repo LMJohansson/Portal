@@ -1,5 +1,5 @@
 import React from 'react'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { TriangleAlert, RefreshCw } from 'lucide-react'
 
 interface Props {
   children: React.ReactNode
@@ -32,7 +32,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-gray-500">
-          <AlertTriangle className="w-12 h-12 text-amber-400" />
+          <TriangleAlert className="w-12 h-12 text-amber-400" />
           <div className="text-center">
             <p className="font-semibold text-gray-700 mb-1">
               {this.props.pluginName

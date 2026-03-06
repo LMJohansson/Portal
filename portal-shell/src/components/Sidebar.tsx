@@ -1,5 +1,5 @@
 import {
-  Home, BarChart2, Settings, Shield, ChevronRight,
+  Home, ChartBar, Settings, Shield, ChevronRight,
   type LucideIcon
 } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router-dom'
@@ -10,7 +10,7 @@ import type { PluginManifest } from '../types/plugin'
 /** Maps icon name strings (from the API) to Lucide components */
 const ICON_MAP: Record<string, LucideIcon> = {
   home: Home,
-  'bar-chart': BarChart2,
+  'bar-chart': ChartBar,
   settings: Settings,
   shield: Shield,
 }
