@@ -86,3 +86,8 @@ portForward:
     namespace: portal
     port: 8080
     localPort: 8080
+  - resourceType: service
+    resourceName: portal-keycloak
+    namespace: portal
+    port: 8080
+    localPort: 8180

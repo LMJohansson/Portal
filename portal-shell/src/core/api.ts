@@ -1,60 +1,58 @@
-import axios from 'axios'
+import axios, { type InternalAxiosRequestConfig } from 'axios'
+import { userManager } from '../auth/userManager'
 import type { PluginManifest } from '../types/plugin'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api'
 
+// Authenticated client — attaches Bearer token to every request.
 export const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Attach JWT to every request if present
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('portal:token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+apiClient.interceptors.request.use(async (config) => {
+  const user = await userManager.getUser()
+  if (user?.access_token && !user.expired) {
+    config.headers.Authorization = `Bearer ${user.access_token}`
   }
   return config
 })
 
-// Redirect to login on 401
+// On 401, attempt a silent token refresh (uses the refresh token — no redirect).
+// If the refresh succeeds the original request is retried once with the new token.
+// If it fails (e.g. Keycloak restarted and invalidated all sessions), the stale
+// user is cleared so react-oidc-context triggers an interactive login on next render.
 apiClient.interceptors.response.use(
   (r) => r,
-  (err) => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem('portal:token')
-      localStorage.removeItem('portal:user')
-      window.location.href = '/login'
+  async (err) => {
+    const config = err.config as InternalAxiosRequestConfig & { _retry?: boolean }
+    if (err.response?.status === 401 && !config._retry) {
+      config._retry = true
+      try {
+        await userManager.signinSilent()
+      } catch {
+        // Refresh token invalid (e.g. Keycloak restarted) — force re-login.
+        await userManager.removeUser()
+        return Promise.reject(err)
+      }
+      // signinSilent succeeded — retry once with the fresh token.
+      return apiClient.request(config)
     }
     return Promise.reject(err)
-  }
+  },
 )
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
-
-export interface LoginPayload {
-  username: string
-  password: string
-}
-
-export interface LoginResponse {
-  accessToken: string
-  expiresIn: number
-  username: string
-  fullName: string
-  email: string
-  roles: string[]
-}
-
-export async function login(payload: LoginPayload): Promise<LoginResponse> {
-  const res = await apiClient.post<LoginResponse>('/auth/login', payload)
-  return res.data
-}
+// Unauthenticated client — used for @PermitAll endpoints.
+// Never sends a Bearer token so a stale/rotated token cannot trigger a 401.
+const publicClient = axios.create({
+  baseURL: BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+})
 
 // ── Plugins ───────────────────────────────────────────────────────────────────
 
 export async function fetchPluginManifest(): Promise<PluginManifest[]> {
-  const res = await apiClient.get<PluginManifest[]>('/plugins/manifest')
+  const res = await publicClient.get<PluginManifest[]>('/plugins/manifest')
   return res.data
 }
 

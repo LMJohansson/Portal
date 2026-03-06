@@ -23,15 +23,14 @@ info:
     ## Overview
     The portal exposes two primary resource groups:
 
-    | Resource        | Base path         | Auth required |
-    |-----------------|-------------------|---------------|
-    | Authentication  | `/api/auth`       | No            |
-    | Plugin Registry | `/api/plugins`    | ADMIN role    |
-    | Plugin Manifest | `/api/plugins/manifest` | Optional |
+    | Resource        | Base path               | Auth required |
+    |-----------------|-------------------------|---------------|
+    | Plugin Registry | `/api/plugins`          | ADMIN role    |
+    | Plugin Manifest | `/api/plugins/manifest` | Optional      |
 
     ## Security
-    Protected endpoints require an `Authorization: Bearer <jwt>` header.
-    Obtain a token via `POST /api/auth/login`.
+    Protected endpoints require an `Authorization: Bearer <token>` header.
+    Tokens are obtained via the OIDC Authorization Code + PKCE flow through Keycloak.
 
     ## Roles
     | Role    | Permissions                               |
@@ -66,9 +65,9 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: |
-        RS256-signed JWT issued by `POST /api/auth/login`.
+        JWT issued by Keycloak (OIDC Authorization Code + PKCE flow).
         Default lifespan: **8 hours** (28 800 seconds).
-        Claims included: `sub` (username), `groups` (roles), `email`, `fullName`.
+        Claims included: `sub`, `groups` (realm roles), `email`, `preferred_username`.
 
   # ─── Reusable schemas ───────────────────────────────────────────────────────
   schemas:
@@ -181,64 +180,6 @@ components:
         createdAt: "2026-01-15T10:00:00"
         updatedAt: "2026-01-15T10:00:00"
 
-    TokenRequest:
-      type: object
-      description: Credentials for obtaining a JWT access token
-      required:
-        - username
-        - password
-      properties:
-        username:
-          type: string
-          description: Portal username
-          minLength: 3
-          maxLength: 50
-          example: admin
-        password:
-          type: string
-          format: password
-          description: User password
-          minLength: 6
-          maxLength: 100
-          example: admin123
-
-    TokenResponse:
-      type: object
-      description: Successful authentication response containing a signed JWT
-      properties:
-        accessToken:
-          type: string
-          description: "RS256-signed JWT. Include as `Authorization: Bearer <token>`."
-          example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
-        tokenType:
-          type: string
-          description: Always "Bearer"
-          example: Bearer
-        expiresIn:
-          type: integer
-          format: int64
-          description: Token validity in seconds
-          example: 28800
-        username:
-          type: string
-          description: Authenticated user's username
-          example: admin
-        fullName:
-          type: string
-          description: Authenticated user's display name
-          example: Admin User
-        email:
-          type: string
-          format: email
-          description: Authenticated user's email address
-          example: admin@portal.example.com
-        roles:
-          type: array
-          description: Roles granted to this user
-          items:
-            type: string
-          example: ["ADMIN", "USER"]
-
     ErrorResponse:
       type: object
       description: Standard error payload returned on 4xx / 5xx responses
@@ -300,75 +241,14 @@ components:
 
 # ─── Tags ────────────────────────────────────────────────────────────────────
 tags:
-  - name: Authentication
-    description: |
-      Login endpoint that exchanges username + password for a signed JWT.
-      No token is required to call these endpoints.
   - name: Plugin Registry
     description: |
       CRUD management of the portal's micro-frontend plugin registry.
       The `manifest` sub-resource is public; all other operations require
-      an `ADMIN` JWT.
+      an `ADMIN` JWT issued by the configured Keycloak realm.
 
 # ─── Paths ───────────────────────────────────────────────────────────────────
 paths:
-
-  # ── Authentication ──────────────────────────────────────────────────────────
-  /api/auth/login:
-    post:
-      tags: [Authentication]
-      operationId: login
-      summary: Authenticate and receive a JWT token
-      description: |
-        Validates username/password against the user store.
-        On success returns a signed **RS256 JWT** valid for 8 hours.
-
-        Use the returned `accessToken` in subsequent requests:
-        ```
-        Authorization: Bearer <accessToken>
-        ```
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TokenRequest'
-            examples:
-              admin:
-                summary: Admin credentials
-                value:
-                  username: admin
-                  password: admin123
-              user:
-                summary: Regular user credentials
-                value:
-                  username: user
-                  password: user123
-      responses:
-        "200":
-          description: Authentication successful — JWT returned
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenResponse'
-              example:
-                accessToken: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
-                tokenType: Bearer
-                expiresIn: 28800
-                username: admin
-                fullName: Admin User
-                email: admin@portal.example.com
-                roles: [ADMIN, USER]
-        "400":
-          $ref: '#/components/responses/BadRequest'
-        "401":
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                message: Invalid credentials
 
   # ── Plugin Registry ─────────────────────────────────────────────────────────
 

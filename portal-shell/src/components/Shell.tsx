@@ -7,17 +7,26 @@ import { usePortalStore } from '../store/portalStore'
 import { fetchPluginManifest } from '../core/api'
 
 export function Shell() {
-  const { setPlugins, sidebarOpen } = usePortalStore()
+  const { setPlugins, setPluginsReady, sidebarOpen } = usePortalStore()
 
-  const { data: plugins } = useQuery({
+  const { data: plugins, isPending, isError } = useQuery({
     queryKey: ['plugins', 'manifest'],
     queryFn: fetchPluginManifest,
     staleTime: 60_000,
   })
 
   useEffect(() => {
-    if (plugins) setPlugins(plugins)
-  }, [plugins, setPlugins])
+    if (plugins !== undefined) {
+      setPlugins(plugins)
+      setPluginsReady(true)
+    }
+  }, [plugins, setPlugins, setPluginsReady])
+
+  const outlet = isPending
+    ? <div className="flex items-center justify-center h-40 animate-pulse text-gray-400">Loading…</div>
+    : isError
+      ? <div className="flex items-center justify-center h-40 text-red-500">Failed to load plugins — is the API running?</div>
+      : <Outlet />
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -28,7 +37,7 @@ export function Shell() {
           ${sidebarOpen ? 'md:pl-[var(--sidebar-width)]' : 'pl-0'}`}
       >
         <div className="p-6">
-          <Outlet />
+          {outlet}
         </div>
       </main>
     </div>

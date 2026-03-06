@@ -3,6 +3,7 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { useAuth } from 'react-oidc-context'
 import { usePortalStore } from '../store/portalStore'
 import type { PluginManifest } from '../types/plugin'
 
@@ -47,7 +48,10 @@ function NavItem({ plugin }: NavItemProps) {
 }
 
 export function Sidebar() {
-  const { plugins, sidebarOpen, hasRole } = usePortalStore()
+  const { plugins, sidebarOpen } = usePortalStore()
+  const { user } = useAuth()
+  const groups = (user?.profile?.groups as string[] | undefined) ?? []
+  const isAdmin = groups.includes('ADMIN')
 
   return (
     <>
@@ -75,7 +79,7 @@ export function Sidebar() {
         </nav>
 
         {/* Admin section */}
-        {hasRole('ADMIN') && (
+        {isAdmin && (
           <div className="p-3 border-t border-gray-100">
             <p className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
               Admin

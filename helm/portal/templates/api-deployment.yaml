@@ -37,6 +37,16 @@ spec:
                 secretKeyRef:
                   name: {{ include "portal.fullname" . }}-db
                   key: password
+        - name: wait-keycloak
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until wget -qO- http://{{ include "portal.fullname" . }}-keycloak:8080/realms/portal > /dev/null 2>&1; do
+                echo "Waiting for Keycloak realm..."
+                sleep 5
+              done
       containers:
         - name: portal-api
           image: "{{ .Values.portalApi.image.repository }}:{{ .Values.portalApi.image.tag }}"
@@ -53,8 +63,10 @@ spec:
                 secretKeyRef:
                   name: {{ include "portal.fullname" . }}-db
                   key: password
-            - name: JWT_ISSUER
-              value: {{ .Values.jwt.issuer | quote }}
+            - name: QUARKUS_OIDC_AUTH_SERVER_URL
+              value: {{ .Values.oidc.authServerUrl | quote }}
+            - name: QUARKUS_OIDC_TOKEN_ISSUER
+              value: {{ .Values.oidc.tokenIssuer | quote }}
             - name: QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION
               value: drop-and-create
           readinessProbe:

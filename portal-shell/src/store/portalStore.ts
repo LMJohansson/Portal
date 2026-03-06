@@ -1,19 +1,13 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { AuthUser, PluginManifest } from '../types/plugin'
+import type { PluginManifest } from '../types/plugin'
 
 interface PortalStore {
-  // ── Auth ───────────────────────────────────────────────────────────────────
-  token: string | null
-  user: AuthUser | null
-  setAuth: (token: string, user: AuthUser) => void
-  clearAuth: () => void
-  isAuthenticated: () => boolean
-  hasRole: (role: string) => boolean
-
   // ── Plugin Registry ────────────────────────────────────────────────────────
   plugins: PluginManifest[]
+  pluginsReady: boolean
   setPlugins: (plugins: PluginManifest[]) => void
+  setPluginsReady: (ready: boolean) => void
 
   // ── UI State ───────────────────────────────────────────────────────────────
   sidebarOpen: boolean
@@ -23,24 +17,12 @@ interface PortalStore {
 
 export const usePortalStore = create<PortalStore>()(
   persist(
-    (set, get) => ({
-      // Auth
-      token: null,
-      user: null,
-      setAuth: (token, user) => {
-        localStorage.setItem('portal:token', token)
-        set({ token, user })
-      },
-      clearAuth: () => {
-        localStorage.removeItem('portal:token')
-        set({ token: null, user: null })
-      },
-      isAuthenticated: () => get().token !== null,
-      hasRole: (role) => get().user?.roles.includes(role) ?? false,
-
+    (set) => ({
       // Plugins
       plugins: [],
+      pluginsReady: false,
       setPlugins: (plugins) => set({ plugins }),
+      setPluginsReady: (ready) => set({ pluginsReady: ready }),
 
       // UI
       sidebarOpen: true,
@@ -51,8 +33,6 @@ export const usePortalStore = create<PortalStore>()(
       name: 'portal-store',
       storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
-        token: state.token,
-        user: state.user,
         sidebarOpen: state.sidebarOpen,
       }),
     }

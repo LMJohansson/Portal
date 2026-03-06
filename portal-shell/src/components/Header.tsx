@@ -1,15 +1,17 @@
 import { Menu, Bell, LogOut, User, ChevronDown } from 'lucide-react'
 import { useState } from 'react'
+import { useAuth } from 'react-oidc-context'
 import { usePortalStore } from '../store/portalStore'
 
 export function Header() {
-  const { user, clearAuth, toggleSidebar } = usePortalStore()
+  const { user, signoutRedirect } = useAuth()
+  const { toggleSidebar } = usePortalStore()
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
-  function handleLogout() {
-    clearAuth()
-    window.location.href = '/login'
-  }
+  const fullName = user?.profile.name ?? user?.profile.preferred_username ?? ''
+  const email = user?.profile.email ?? ''
+  const username = user?.profile.preferred_username ?? ''
+  const roles = (user?.profile?.groups as string[] | undefined) ?? []
 
   return (
     <header
@@ -46,8 +48,8 @@ export function Header() {
               <User className="w-4 h-4 text-brand-700" />
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-medium text-gray-900 leading-tight">{user?.fullName}</p>
-              <p className="text-xs text-gray-400">{user?.roles.join(', ')}</p>
+              <p className="text-sm font-medium text-gray-900 leading-tight">{fullName}</p>
+              <p className="text-xs text-gray-400">{roles.join(', ')}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-gray-400" />
           </button>
@@ -60,13 +62,13 @@ export function Header() {
               />
               <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl border border-gray-200 shadow-lg z-50 py-1">
                 <div className="px-3 py-2 border-b border-gray-100">
-                  <p className="text-sm font-medium">{user?.username}</p>
-                  <p className="text-xs text-gray-400">{user?.email}</p>
+                  <p className="text-sm font-medium">{username}</p>
+                  <p className="text-xs text-gray-400">{email}</p>
                 </div>
                 <button
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600
                     hover:bg-red-50 transition-colors"
-                  onClick={handleLogout}
+                  onClick={() => signoutRedirect()}
                 >
                   <LogOut className="w-4 h-4" />
                   Sign out

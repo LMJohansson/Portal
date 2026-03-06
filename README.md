@@ -1,63 +1,61 @@
-# Portal
+# Enterprise Micro-Frontend Portal
 
-An enterprise **micro-frontend portal** built with Vite Module Federation, React 19, and Quarkus. MFEs are discovered at runtime from a plugin registry API — the shell never needs to be redeployed to add or remove plugins.
+A production-grade reference implementation of a **micro-frontend portal** built with:
+
+- **Shell**: React 19 + Vite + Module Federation 2 (dynamic remotes, no static wiring)
+- **API**: Quarkus 3 (Java 21) — plugin registry, OIDC resource server
+- **Auth**: Keycloak 26 — OIDC Authorization Code + PKCE
+- **Infra**: Docker Compose (local dev) · Kubernetes / Skaffold / Helm (k8s-dev)
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  Browser                                                        │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  portal-shell  (host, :3000)                             │   │
-│  │                                                          │   │
-│  │  1. POST /api/auth/login  →  JWT                         │   │
-│  │  2. GET  /api/plugins/manifest  →  plugin list           │   │
-│  │  3. load remoteEntry.js for each plugin (MF)             │   │
-│  │  4. render plugin component inside shell layout          │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│           │                  │                  │               │
-│    mfe-home (:3001)  mfe-dashboard (:3002)  mfe-hello (:3003)   │
-└─────────────────────────────────────────────────────────────────┘
-                          │
-                  portal-api (:8080)
-                  Quarkus + H2/PostgreSQL
+Browser
+  │
+  ├─► :3000  portal-shell    (React host app, nginx)
+  │     │   MFEs loaded at runtime via Module Federation
+  │     ├─► :3001  mfe-home
+  │     ├─► :3002  mfe-dashboard
+  │     └─► :3003  mfe-hello
+  │
+  ├─► :8080  portal-api      (Quarkus — plugin registry)
+  │     validates Bearer tokens against Keycloak JWKS
+  │
+  └─► :8180  Keycloak        (OIDC IdP, realm: portal)
 ```
 
 ### Key design decisions
 
 | Concern | Decision |
-|---|---|
-| Plugin discovery | `GET /api/plugins/manifest` — returns only plugins enabled and permitted for the current user's roles |
-| Module Federation | **Dynamic** — shell has no static remotes; calls `registerRemotes()` + `loadRemote()` from `@module-federation/runtime` at runtime |
-| Shared React | `singleton: true` on all shared entries; MF2 handles shared-scope initialisation automatically |
-| MFE CSS | `vite-plugin-css-injected-by-js` bundles each MFE's Tailwind CSS into its JS so styles apply when the chunk loads inside the shell |
-| Auth | Ed25519 JWT signed by the API, verified by MicroProfile JWT on every protected endpoint |
-| Routing | Each plugin owns a sub-tree under its registered `route` (e.g. `/home/*`, `/dashboard/*`) |
+|---------|----------|
+| Auth | OIDC Authorization Code + PKCE via Keycloak — no passwords in the app |
+| Plugin discovery | `GET /api/plugins/manifest` — public endpoint, no token sent; avoids 401 when Keycloak rotates signing keys |
+| Module Federation | **Dynamic** — shell has no static remotes; uses `registerRemotes()` + `loadRemote()` at runtime |
+| Shared React | `singleton: true` on all shared entries; MF2 handles shared-scope init automatically |
+| MFE CSS | `vite-plugin-css-injected-by-js` injects styles at load time (MF only transfers JS) |
+| Routing | Each plugin owns a sub-tree under its registered `route` (e.g. `/home/*`) |
 
 ---
 
 ## Tech stack
 
 | Layer | Technology |
-|---|---|
+|-------|-----------|
 | Frontend framework | React 19, TypeScript |
 | Bundler | Vite 5 |
-| Module Federation | `@module-federation/vite` v1.12.0 |
-| Styling | Tailwind CSS 3 · `vite-plugin-css-injected-by-js` |
-| State | Zustand (persisted to `sessionStorage`) |
-| Data fetching | TanStack Query v5 |
-| Backend | Quarkus 3, Java 25 (code level 21) |
-| Auth | SmallRye JWT, MicroProfile JWT (Ed25519) |
-| Database | H2 (dev) · PostgreSQL 17 (prod) |
+| Module Federation | `@module-federation/vite` 1.x (build) + `@module-federation/runtime` 2.x (browser) |
+| Styling | Tailwind CSS 3, `vite-plugin-css-injected-by-js` |
+| State | Zustand 4 (sessionStorage persistence) |
+| Data fetching | TanStack Query 5 |
+| Auth (frontend) | `oidc-client-ts` 3, `react-oidc-context` 3 |
+| Auth (backend) | Keycloak 26, `quarkus-oidc` (JWKS validation) |
+| API | Quarkus 3.9, Java 21, MicroProfile REST + JWT |
 | ORM | Hibernate ORM Panache |
-| Build | Maven 3.9.12 (`./mvnw`), `frontend-maven-plugin` |
-| Package manager | Yarn Berry 4.12.0 (node-modules linker) |
-| Node | 24 LTS (v24.14.0) |
-| Container runtime | Docker · nginx (unprivileged) |
-| Kubernetes | Minikube · Skaffold · Helm |
+| Database | H2 (dev) · PostgreSQL 17 (prod) |
+| Build | Maven 3.9 (`./mvnw`), Yarn Berry 4.12, `frontend-maven-plugin` |
+| Container orchestration | Docker Compose · Kubernetes + Helm + Skaffold |
 
 ---
 
@@ -65,40 +63,34 @@ An enterprise **micro-frontend portal** built with Vite Module Federation, React
 
 ```
 Portal/
-├── .mvn/wrapper/           # Maven wrapper (3.9.12)
-├── .yarn/releases/         # Yarn Berry binary (committed)
-├── helm/portal/            # Helm chart for Kubernetes
-│   ├── templates/
-│   │   ├── api-deployment.yaml
-│   │   ├── mfe-*-deployment.yaml
-│   │   ├── nginx-configmap.yaml
-│   │   ├── postgres-*.yaml
-│   │   └── shell-deployment.yaml
+├── helm/portal/                 # Helm chart for Kubernetes
+│   ├── files/
+│   │   └── portal-realm.json    # Keycloak realm definition (single source of truth)
+│   ├── templates/               # K8s manifests (API, shell, MFEs, Postgres, Keycloak)
 │   └── values.yaml
+├── mfe-home/                    # Remote MFE — Home page (:3001)
+├── mfe-dashboard/               # Remote MFE — Analytics dashboard (:3002)
+├── mfe-hello/                   # Remote MFE — Hello World template (:3003)
 ├── nginx/
-│   ├── shell.conf          # Shell nginx: serves SPA + proxies /api/ to portal-api
-│   └── mfe.conf            # MFE nginx: serves static assets with CORS headers
-├── mfe-dashboard/          # Remote MFE — Analytics dashboard (:3002)
-├── mfe-hello/              # Remote MFE — Hello World template (:3003)
-├── mfe-home/               # Remote MFE — Home page (:3001)
-├── portal-api/             # Quarkus REST API (:8080)
+│   ├── shell.conf               # SPA + /api/ proxy to portal-api
+│   └── mfe.conf                 # Static assets with CORS headers
+├── portal-api/                  # Quarkus REST API (:8080)
 │   └── src/main/java/com/portal/
-│       ├── auth/           # AuthResource, JwtService, User entity
-│       ├── config/         # Exception mappers
-│       ├── health/         # MicroProfile Health readiness check
-│       └── plugin/         # Plugin entity, PluginResource, PluginService
-├── portal-shell/           # Host app (:3000)
+│       ├── config/              # ErrorResponse, exception mapper
+│       ├── health/              # MicroProfile Health check
+│       └── plugin/              # Plugin entity, PluginResource, PluginService
+├── portal-shell/                # React host app (:3000)
 │   └── src/
-│       ├── core/
-│       │   ├── DynamicRemote.tsx   # Lazy + Suspense + ErrorBoundary wrapper
-│       │   └── PluginLoader.ts     # Dynamic MF loader (registerRemotes + loadRemote)
-│       ├── pages/          # LoginPage, NotFoundPage, AdminPluginsPage
-│       ├── store/          # Zustand store (auth + plugin state)
-│       └── types/          # Plugin manifest types, federation.d.ts
-├── package.json            # Yarn workspace root
-├── pom.xml                 # Maven aggregator
-├── skaffold.yaml
-└── Makefile
+│       ├── auth/                # userManager.ts — oidc-client-ts singleton
+│       ├── core/                # DynamicRemote, PluginLoader, api client
+│       ├── pages/               # CallbackPage, AdminPluginsPage, NotFoundPage
+│       ├── store/               # Zustand store (plugins + UI state)
+│       └── types/               # PluginManifest, AuthUser, federation.d.ts
+├── docker-compose.yml           # Full stack for local dev
+├── skaffold.yaml                # Skaffold config (Minikube)
+├── Makefile
+├── package.json                 # Yarn workspace root
+└── pom.xml                      # Maven aggregator
 ```
 
 ---
@@ -107,76 +99,109 @@ Portal/
 
 ### Prerequisites
 
-- Java 25+
-- Node.js 24 LTS — or rely on the project-local binary that `./mvnw` downloads automatically on first build
+- Java 21+
+- Docker (for Keycloak and Postgres)
+- Node 20+ — or rely on the project-local binary that `./mvnw` downloads on first build
 
-### Local development
+### 1 — Install dependencies
 
-1. **Install dependencies**
-
-   ```bash
-   make install
-   ```
-
-2. **Start each service in a separate terminal**
-
-   ```bash
-   make dev-mfe-home        # http://localhost:3001
-   make dev-mfe-dashboard   # http://localhost:3002
-   make dev-mfe-hello       # http://localhost:3003
-   make dev-shell           # http://localhost:3000
-   make dev-api             # http://localhost:8080  (Quarkus dev mode, live reload)
-   ```
-
-   > The shell's Vite dev server proxies `/api/*` to `localhost:8080` so no CORS configuration is needed locally.
-
-3. Open `http://localhost:3000` and log in with one of the seeded accounts below.
-
-### Full Maven build
-
-```bash
-./mvnw install -DskipTests
-# or: make build
+```sh
+make install
+# or: node .yarn/releases/yarn-4.12.0.cjs install
 ```
 
-This runs `yarn install` (generate-sources phase), builds each MFE workspace (compile phase), then packages the Quarkus API.
+### 2 — Start infrastructure (Keycloak + Postgres)
+
+```sh
+make dev-keycloak
+```
+
+Starts Keycloak on **:8180** and Postgres on **:5432** via Docker Compose. Keycloak auto-imports the portal realm from `helm/portal/files/portal-realm.json`.
+
+Keycloak admin console: **http://localhost:8180** (admin / admin)
+
+### 3 — Start services
+
+Run each in a separate terminal:
+
+```sh
+make dev-api             # Quarkus on :8080 (H2 in-memory, live reload)
+make dev-mfe-home        # :3001
+make dev-mfe-dashboard   # :3002
+make dev-mfe-hello       # :3003
+make dev-shell           # :3000
+```
+
+Open **http://localhost:3000** — you are redirected to Keycloak to sign in.
+
+### Dev credentials
+
+| Username | Password   | Roles        |
+|----------|------------|--------------|
+| `admin`  | `admin123` | ADMIN, USER  |
+| `user`   | `user123`  | USER         |
 
 ---
 
-## Default credentials
+## Authentication
 
-| Username | Password | Roles |
-|---|---|---|
-| `admin` | `admin123` | `ADMIN`, `USER` |
-| `user` | `user123` | `USER` |
+Auth is fully delegated to **Keycloak**. The portal uses **Authorization Code + PKCE** — no client secrets, no password forms in the app.
+
+```
+Browser                  Keycloak                  portal-api
+   │                        │                          │
+   │── /callback not authed ──►                        │
+   │◄── redirect to /auth/authorize ──────────────────  │
+   │                        │                          │
+   │── user logs in ───────►│                          │
+   │◄── redirect + code ────│                          │
+   │                        │                          │
+   │── exchange code ───────►                          │
+   │◄── access_token ───────│                          │
+   │                        │                          │
+   │── GET /api/plugins/manifest (no token) ────────────►│
+   │◄──────────────────────── plugin list ──────────────│
+```
+
+### Keycloak realm
+
+Defined in `helm/portal/files/portal-realm.json` — imported automatically on startup in both Docker Compose and Kubernetes.
+
+- **Client**: `portal-shell` — public, PKCE enforced, redirect URI `http://localhost:3000/*`
+- **Roles**: `ADMIN`, `USER`
+- **Protocol mappers**:
+  - `realm-roles-to-groups` — realm roles → `groups` claim in ID, access, and userinfo tokens
+  - `audience-portal-shell` — adds `portal-shell` to the access token `aud` claim (required for Quarkus OIDC audience validation)
+
+### Adding users
+
+Use the Keycloak admin console (realm `portal` → Users). For permanent seeded users, add entries to `helm/portal/files/portal-realm.json` under `"users"`.
+
+### API authorization
+
+The Quarkus API is a **Bearer Token resource server** (`quarkus-oidc`, `application-type=service`):
+
+- Validates JWT signatures via Keycloak's JWKS endpoint (auto-discovered from realm)
+- Validates the `aud` claim — access tokens must contain `portal-shell` (provided by the audience mapper)
+- Maps the `groups` claim to roles for `@RolesAllowed`
+- `GET /api/plugins/manifest` — fully public (`@PermitAll`), no token required or sent
+- All other plugin endpoints require the `ADMIN` role
+
+### Issuer URL in Docker / Kubernetes
+
+In `start-dev` mode, Keycloak derives the token `iss` claim from the request `Host` header. The browser reaches Keycloak at `http://localhost:8180`, so tokens carry `iss=http://localhost:8180/realms/portal`. The API, however, connects to Keycloak via its internal service name (`http://keycloak:8080` in Docker Compose, `http://portal-keycloak:8080` in Kubernetes). The OIDC discovery document served at that internal URL would report a different issuer, causing JWT validation to fail.
+
+The fix is `QUARKUS_OIDC_TOKEN_ISSUER=http://localhost:8180/realms/portal`, which tells Quarkus what issuer to expect in tokens while still fetching JWKS from the internal URL. This env var is pre-configured in both `docker-compose.yml` and the Helm chart (`oidc.tokenIssuer`).
 
 ---
 
 ## API reference
 
-### Auth — `/api/auth`
-
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/auth/login` | Authenticate and receive a signed JWT |
-
-**Request:**
-```json
-{ "username": "admin", "password": "admin123" }
-```
-
-**Response:**
-```json
-{ "token": "<jwt>", "username": "admin", "roles": ["ADMIN", "USER"] }
-```
-
 ### Plugins — `/api/plugins`
 
-All write endpoints require `Authorization: Bearer <jwt>` with the `ADMIN` role.
-
 | Method | Path | Auth | Description |
-|---|---|---|---|
-| `GET` | `/api/plugins/manifest` | Bearer (any role) | Enabled plugins visible to the caller's roles |
+|--------|------|------|-------------|
+| `GET` | `/api/plugins/manifest` | None (public) | All enabled plugins |
 | `GET` | `/api/plugins` | Bearer ADMIN | List all plugins |
 | `GET` | `/api/plugins/{id}` | Bearer ADMIN | Get a single plugin |
 | `POST` | `/api/plugins` | Bearer ADMIN | Register a new plugin |
@@ -199,95 +224,133 @@ All write endpoints require `Authorization: Bearer <jwt>` with the `ADMIN` role.
 }
 ```
 
-### Health
+**Swagger UI**: http://localhost:8080/swagger-ui
+**OpenAPI spec**: http://localhost:8080/q/openapi?format=json
+**Health**: http://localhost:8080/q/health
 
-`GET /q/health` — MicroProfile Health readiness check (verifies database connectivity).
+---
+
+## Makefile targets
+
+```sh
+make install           # yarn install (all workspaces)
+make build             # full Maven build (MFEs → shell → API), skips tests
+make test              # Quarkus unit + integration tests
+make clean             # remove all build artefacts
+
+# ── Local dev ──────────────────────────────────────────
+make dev               # print startup instructions
+make dev-keycloak      # docker compose up keycloak postgres -d
+make dev-db            # docker compose up postgres -d
+make dev-api           # ./mvnw quarkus:dev
+make dev-shell         # vite dev on :3000
+make dev-mfe-home      # vite dev on :3001
+make dev-mfe-dashboard # vite dev on :3002
+make dev-mfe-hello     # vite dev on :3003
+
+# ── Kubernetes ─────────────────────────────────────────
+make k8s-start         # minikube start (run once)
+make k8s-pull          # pull base images into Minikube (run once)
+make k8s-dev           # skaffold dev — build, deploy, port-forward, watch
+make k8s-build         # build images only
+make k8s-deploy        # one-shot build + deploy
+make k8s-delete        # helm uninstall
+make k8s-status        # kubectl get pods,svc
+```
+
+---
+
+## Kubernetes / Skaffold
+
+### First-time setup
+
+```sh
+make k8s-start   # start Minikube with raised file-descriptor limits
+make k8s-pull    # pull base images (Node, nginx, JDK, Postgres, Keycloak, busybox)
+```
+
+### Dev loop
+
+```sh
+make k8s-dev
+```
+
+Skaffold builds all five application images into Minikube's Docker daemon and deploys via the Helm chart. Port-forwards match the local dev ports:
+
+| Service       | Local port | Notes |
+|---------------|-----------|-------|
+| portal-shell  | 3000 | |
+| mfe-home      | 3001 | MF remote entry URL must match |
+| mfe-dashboard | 3002 | MF remote entry URL must match |
+| mfe-hello     | 3003 | |
+| portal-api    | 8080 | |
+| Keycloak      | 8180 | Browser hits this for OIDC login |
+
+The shell image is built with `VITE_OIDC_AUTHORITY` defaulting to `http://localhost:8180/realms/portal`, which matches the port-forward — no rebuild needed.
+
+Startup order is enforced by init containers:
+1. `wait-postgres` — polls `pg_isready` before the API starts
+2. `wait-keycloak` — polls the realm endpoint (`/realms/portal`) before the API starts
+
+### Helm values
+
+| Key | Default | Notes |
+|-----|---------|-------|
+| `oidc.authServerUrl` | `http://portal-keycloak:8080/realms/portal` | Internal K8s URL used by the API to fetch JWKS |
+| `oidc.tokenIssuer` | `http://localhost:8180/realms/portal` | External URL — must match the `iss` claim in tokens |
+| `keycloak.adminPassword` | `admin` | **Change for non-local environments** |
+| `db.password` | `portal` | **Change for non-local environments** |
+
+> The Helm release name must be `portal` — the nginx `proxy_pass` and OIDC URL are derived from it.
 
 ---
 
 ## Adding a new MFE
 
-`mfe-hello` is the reference template. To create a new plugin:
+`mfe-hello` is the reference template.
 
-1. Copy `mfe-hello/` and rename it (e.g. `mfe-reports/`).
-2. Update the `name`, `dev` port, and federation `name`/`exposes` in its `vite.config.ts`.
-3. Add the workspace to root `package.json` (`workspaces`) and `pom.xml` (`<modules>`).
-4. Copy `helm/portal/templates/mfe-hello-{deployment,service}.yaml` and update the component name.
-5. Add an entry in `helm/portal/values.yaml` and `skaffold.yaml`.
-6. Register the plugin via `POST /api/plugins` or add a row to `portal-api/src/main/resources/import.sql`.
+1. **Copy** `mfe-hello/`, rename the directory and update `name` / `dev` port in `package.json` and federation `name`/`exposes` in `vite.config.ts`.
 
-The shell picks it up on next manifest refresh — no shell rebuild required.
+2. **Add** the workspace to root `package.json` (`workspaces`) and root `pom.xml` (`<modules>`).
 
----
+3. **CSS** — add `cssInjectedByJs()` **before** `federation()` in `vite.config.ts` and import `./index.css` in `Plugin.tsx`.
 
-## Kubernetes (Minikube)
+4. **Register** — add an entry via the admin UI at `/admin/plugins`, or add a row to `portal-api/src/main/resources/import.sql` (dev seed).
 
-### One-time setup
+5. **K8s** — copy `helm/portal/templates/mfe-hello-{deployment,service}.yaml`, update the component name, add a `values.yaml` entry and a `skaffold.yaml` artifact + port-forward.
 
-```bash
-make k8s-start   # start Minikube with raised file-descriptor limits
-make k8s-pull    # pull third-party base images into Minikube's Docker daemon
-make keys        # generate Ed25519 key pair (gitignored; required before first run)
-```
-
-### Development loop
-
-```bash
-make k8s-dev
-```
-
-Runs `skaffold dev` inside Minikube's Docker environment. Skaffold watches for source changes, rebuilds the affected image, and rolls out the updated pod automatically.
-
-Port-forwards match the local dev ports so Module Federation remote entry URLs work unchanged:
-
-| Service | Local URL |
-|---|---|
-| portal-shell | `http://localhost:3000` |
-| mfe-home | `http://localhost:3001` |
-| mfe-dashboard | `http://localhost:3002` |
-| mfe-hello | `http://localhost:3003` |
-| portal-api | `http://localhost:8080` |
-
-### Other commands
-
-```bash
-make k8s-build    # build images only (no deploy)
-make k8s-deploy   # one-shot build + deploy (no watch)
-make k8s-status   # kubectl get pods,svc
-make k8s-delete   # helm uninstall portal
-```
-
-> **Important:** The Helm release name must be `portal`. The nginx `proxy_pass` target is derived from the release name as `portal-api`.
+The shell picks up new plugins on the next manifest refresh — no shell rebuild required.
 
 ---
 
-## Configuration
+## Configuration reference
 
-Key `application.properties` settings (all overridable by environment variable in prod):
+Key `application.properties` settings (all overridable by environment variable):
 
-| Property | Default | Env var override |
-|---|---|---|
+| Property | Default | Override |
+|----------|---------|----------|
 | `quarkus.http.port` | `8080` | — |
-| `quarkus.http.cors.origins` | `http://localhost:3000` | — |
-| `mp.jwt.verify.issuer` | `https://portal.example.com` | `JWT_ISSUER` |
+| `quarkus.oidc.auth-server-url` | `http://localhost:8180/realms/portal` | `QUARKUS_OIDC_AUTH_SERVER_URL` |
+| `quarkus.oidc.token.issuer` | _(unset — uses discovery)_ | `QUARKUS_OIDC_TOKEN_ISSUER` |
+| `quarkus.oidc.connection-retry-count` | `10` | — |
 | `%prod.quarkus.datasource.jdbc.url` | `jdbc:postgresql://localhost:5432/portal` | `DB_URL` |
 | `%prod.quarkus.datasource.username` | `portal` | `DB_USER` |
 | `%prod.quarkus.datasource.password` | `portal` | `DB_PASSWORD` |
 
-### Ed25519 keys
+Frontend OIDC settings (baked in at build time, override via `.env.local` in dev):
 
-Key files are gitignored and must be generated locally before running the app:
-
-```bash
-make keys
-```
+| Variable | Default |
+|----------|---------|
+| `VITE_OIDC_AUTHORITY` | `http://localhost:8180/realms/portal` |
+| `VITE_OIDC_CLIENT_ID` | `portal-shell` |
+| `VITE_API_URL` | `/api` |
 
 ---
 
 ## Security notes
 
-- JWTs are Ed25519 signed; the private key never leaves the API.
-- The plugin manifest endpoint filters by role — users only see plugins they are permitted to access.
+- No passwords or secrets ever reach the browser — Keycloak owns the login form.
+- The plugin manifest endpoint is public and returns all enabled plugins; no Bearer token is sent to it, so a Keycloak restart (new signing keys) never breaks the initial page load.
 - `remoteEntry.js` is served with `Cache-Control: no-cache` so plugin updates are reflected immediately.
-- The shell's nginx config proxies `/api/` server-side in Kubernetes, keeping the API off the public network.
-- **Change all default passwords and replace the Ed25519 keys before going to production.**
+- In Kubernetes, the shell's nginx proxies `/api/` server-side, keeping the API off the public network.
+- **Change `keycloak.adminPassword`, `db.password`, and Keycloak user passwords before any non-local deployment.**

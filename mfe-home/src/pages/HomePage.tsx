@@ -2,9 +2,9 @@ import { Home, Star, Zap, Shield, ArrowRight } from 'lucide-react'
 
 const features = [
   { icon: Zap, title: 'Module Federation', desc: 'Independent deployments via Vite Module Federation — no rebuild of the shell required.' },
-  { icon: Shield, title: 'JWT Security', desc: 'Role-based access control enforced at both the API and the plugin manifest level.' },
+  { icon: Shield, title: 'OIDC Auth', desc: 'Authorization Code + PKCE via Keycloak. Role-based access enforced at both the API and the plugin manifest level.' },
   { icon: Home, title: 'Plugin Registry', desc: 'Register, enable/disable and hot-swap micro-frontends at runtime via the admin panel.' },
-  { icon: Star, title: 'Quarkus Backend', desc: 'Supersonic sub-atomic Java backend with native-image support and OpenAPI docs.' },
+  { icon: Star, title: 'Quarkus Backend', desc: 'Supersonic sub-atomic Java backend with OpenAPI docs and MicroProfile Health.' },
 ]
 
 export default function HomePage() {
@@ -52,8 +52,8 @@ export default function HomePage() {
         <div className="space-y-2">
           {[
             { label: 'Swagger UI (API docs)', href: 'http://localhost:8080/swagger-ui' },
-            { label: 'Health Check', href: 'http://localhost:8080/q/health' },
-            { label: 'Metrics (Prometheus)', href: 'http://localhost:8080/q/metrics' },
+            { label: 'OpenAPI spec (JSON)', href: 'http://localhost:8080/q/openapi?format=json' },
+            { label: 'Health check', href: 'http://localhost:8080/q/health' },
           ].map(({ label, href }) => (
             <a
               key={href}

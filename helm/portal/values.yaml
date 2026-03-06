@@ -76,6 +76,19 @@ portalShell:
       cpu: 100m
       memory: 64Mi
 
+# ── Keycloak ──────────────────────────────────────────────────────────────
+keycloak:
+  image: quay.io/keycloak/keycloak:26.0
+  # WARNING: change this before deploying to any non-local environment
+  adminPassword: admin
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
 # ── PostgreSQL ────────────────────────────────────────────────────────────
 postgres:
   image: docker.io/library/postgres:17
@@ -88,8 +101,13 @@ db:
   # WARNING: change this before deploying to any non-local environment
   password: portal
 
-jwt:
-  issuer: https://portal.example.com
+oidc:
+  # Internal K8s URL used by the API to fetch JWKS / discovery
+  authServerUrl: http://portal-keycloak:8080/realms/portal
+  # External URL used by the browser — must match the iss claim in tokens.
+  # Keycloak (start-dev) uses the request Host header as issuer, so the browser-facing
+  # URL differs from the internal service URL. Quarkus needs this to validate iss.
+  tokenIssuer: http://localhost:8180/realms/portal
 
 # ── Service types ─────────────────────────────────────────────────────────
 # With Skaffold: keep all as ClusterIP — Skaffold port-forwards handle access.

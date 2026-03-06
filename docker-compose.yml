@@ -1,0 +1,90 @@
+services:
+
+  # ── Identity Provider ───────────────────────────────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - ./helm/portal/files/portal-realm.json:/opt/keycloak/data/import/portal-realm.json:ro
+    ports:
+      - "8180:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # ── Database ────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: portal
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: portal
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Backend API ─────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: portal-api/Dockerfile
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/portal
+      DB_USER: portal
+      DB_PASSWORD: portal
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/portal
+      QUARKUS_OIDC_TOKEN_ISSUER: http://localhost:8180/realms/portal
+    ports:
+      - "8080:8080"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # ── Micro-frontends ─────────────────────────────────────────────────────────
+  mfe-home:
+    build:
+      context: .
+      dockerfile: mfe-home/Dockerfile
+    ports:
+      - "3001:80"
+
+  mfe-dashboard:
+    build:
+      context: .
+      dockerfile: mfe-dashboard/Dockerfile
+    ports:
+      - "3002:80"
+
+  mfe-hello:
+    build:
+      context: .
+      dockerfile: mfe-hello/Dockerfile
+    ports:
+      - "3003:80"
+
+  # ── Shell ───────────────────────────────────────────────────────────────────
+  shell:
+    build:
+      context: .
+      dockerfile: portal-shell/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

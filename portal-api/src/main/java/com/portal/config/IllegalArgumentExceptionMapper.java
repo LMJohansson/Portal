@@ -1,6 +1,6 @@
 package com.portal.config;
 
-import com.portal.auth.AuthResource.ErrorResponse;
+import com.portal.config.ErrorResponse;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
