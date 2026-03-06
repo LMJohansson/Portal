@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { federation } from '@module-federation/vite'
 
@@ -24,6 +25,7 @@ const fixMF2CjsNaming = {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     react(),
     federation({
       name: 'portal_shell',

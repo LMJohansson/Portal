@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { federation } from '@module-federation/vite'
 import cssInjectedByJs from 'vite-plugin-css-injected-by-js'
@@ -20,6 +21,7 @@ const fixMF2CjsNaming = {
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     react(),
     cssInjectedByJs(),
     federation({
