@@ -46,7 +46,7 @@ Browser
 | Frontend framework | React 19, TypeScript |
 | Bundler | Vite 5 |
 | Module Federation | `@module-federation/vite` 1.x (build) + `@module-federation/runtime` 2.x (browser) |
-| Styling | Tailwind CSS 3, `vite-plugin-css-injected-by-js` |
+| Styling | Tailwind CSS 4 (`@tailwindcss/vite`), `vite-plugin-css-injected-by-js` |
 | State | Zustand 4 (sessionStorage persistence) |
 | Data fetching | TanStack Query 5 |
 | Auth (frontend) | `oidc-client-ts` 3, `react-oidc-context` 3 |
@@ -313,7 +313,7 @@ Startup order is enforced by init containers:
 
 2. **Add** the workspace to root `package.json` (`workspaces`) and root `pom.xml` (`<modules>`).
 
-3. **CSS** — add `cssInjectedByJs()` **before** `federation()` in `vite.config.ts` and import `./index.css` in `Plugin.tsx`.
+3. **CSS** — add `tailwindcss()` first, `cssInjectedByJs()` before `federation()`, in `vite.config.ts`. Import `./index.css` (containing `@import "tailwindcss"`) in `Plugin.tsx`.
 
 4. **Register** — add an entry via the admin UI at `/admin/plugins`, or add a row to `portal-api/src/main/resources/import.sql` (dev seed).
 
