@@ -35,6 +35,7 @@ Browser
 | Module Federation | **Dynamic** — shell has no static remotes; uses `registerRemotes()` + `loadRemote()` at runtime |
 | Shared React | `singleton: true` on all shared entries; MF2 handles shared-scope init automatically |
 | MFE CSS | `vite-plugin-css-injected-by-js` injects styles at load time (MF only transfers JS) |
+| MFE independence | Each MFE has its own Dockerfile and `package.json`; builds are fully isolated — no workspace stubs, no cross-MFE knowledge |
 | Routing | Each plugin owns a sub-tree under its registered `route` (e.g. `/home/*`) |
 
 ---
@@ -46,7 +47,7 @@ Browser
 | Frontend framework | React 19, TypeScript |
 | Bundler | Vite 5 |
 | Module Federation | `@module-federation/vite` 1.x (build) + `@module-federation/runtime` 2.x (browser) |
-| Styling | Tailwind CSS 4 (`@tailwindcss/vite`), `vite-plugin-css-injected-by-js` |
+| Styling | Tailwind CSS 4 (`@tailwindcss/vite`), `vite-plugin-css-injected-by-js` (per MFE) |
 | State | Zustand 4 (sessionStorage persistence) |
 | Data fetching | TanStack Query 5 |
 | Auth (frontend) | `oidc-client-ts` 3, `react-oidc-context` 3 |
@@ -313,7 +314,7 @@ Startup order is enforced by init containers:
 
 2. **Add** the workspace to root `package.json` (`workspaces`) and root `pom.xml` (`<modules>`).
 
-3. **CSS** — add `tailwindcss()` first, `cssInjectedByJs()` before `federation()`, in `vite.config.ts`. Import `./index.css` (containing `@import "tailwindcss"`) in `Plugin.tsx`.
+3. **CSS** — add `vite-plugin-css-injected-by-js` to the MFE's own `devDependencies` and run `yarn install`. In `vite.config.ts`, add `tailwindcss()` first and `cssInjectedByJs()` before `federation()`. Import `./index.css` (containing `@import "tailwindcss"`) in `Plugin.tsx`.
 
 4. **Register** — add an entry via the admin UI at `/admin/plugins`, or add a row to `portal-api/src/main/resources/import.sql` (dev seed).
 

@@ -3132,6 +3132,7 @@ __metadata:
     tailwindcss: "npm:^4.0.0"
     typescript: "npm:^5.4.5"
     vite: "npm:^5.2.8"
+    vite-plugin-css-injected-by-js: "npm:^4.0.1"
   languageName: unknown
   linkType: soft
 
@@ -3154,6 +3155,7 @@ __metadata:
     tailwindcss: "npm:^4.0.0"
     typescript: "npm:^5.4.5"
     vite: "npm:^5.2.8"
+    vite-plugin-css-injected-by-js: "npm:^4.0.1"
   languageName: unknown
   linkType: soft
 
@@ -3176,6 +3178,7 @@ __metadata:
     tailwindcss: "npm:^4.0.0"
     typescript: "npm:^5.4.5"
     vite: "npm:^5.2.8"
+    vite-plugin-css-injected-by-js: "npm:^4.0.1"
   languageName: unknown
   linkType: soft
 
@@ -3606,7 +3609,6 @@ __metadata:
   resolution: "portal@workspace:."
   dependencies:
     vite: "npm:^5.2.8"
-    vite-plugin-css-injected-by-js: "npm:^4.0.1"
   languageName: unknown
   linkType: soft
 

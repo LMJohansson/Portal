@@ -44,7 +44,10 @@ function IndexRedirect() {
     // Shell is fetching plugins — wait so we don't land on a non-existent route
     return null
   }
-  return <Navigate to={plugins[0]?.route ?? '/home'} replace />
+  if (plugins.length === 0) {
+    return <div className="p-6 text-gray-500">No plugins available.</div>
+  }
+  return <Navigate to={plugins[0].route} replace />
 }
 
 function AppRoutes() {

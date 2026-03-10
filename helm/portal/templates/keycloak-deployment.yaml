@@ -23,9 +23,9 @@ spec:
           imagePullPolicy: IfNotPresent
           args: ["start-dev", "--import-realm"]
           env:
-            - name: KEYCLOAK_ADMIN
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
               value: "admin"
-            - name: KEYCLOAK_ADMIN_PASSWORD
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
               value: {{ .Values.keycloak.adminPassword | quote }}
           ports:
             - name: http

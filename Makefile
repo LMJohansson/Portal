@@ -79,12 +79,12 @@ k8s-deploy: ## One-shot build + deploy (no watch)
 
 k8s-pull: ## Pull third-party images into Minikube's Docker daemon (run once)
 	eval $$(minikube docker-env) && \
-	  docker pull quay.io/sclorg/nodejs-24-c9s:latest && \
-	  docker pull quay.io/nginx/nginx-unprivileged:stable-alpine && \
-	  docker pull docker.io/library/eclipse-temurin:25-jdk-alpine && \
-	  docker pull docker.io/library/postgres:17 && \
+	  docker pull node:24-alpine && \
+	  docker pull nginx:stable-alpine && \
+	  docker pull eclipse-temurin:25-jdk-alpine && \
+	  docker pull postgres:17 && \
 	  docker pull quay.io/keycloak/keycloak:26.0 && \
-	  docker pull docker.io/library/busybox:1.36
+	  docker pull busybox:1.36
 
 k8s-delete: ## Remove the Helm release from the cluster
 	skaffold delete

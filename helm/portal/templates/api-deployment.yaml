@@ -67,7 +67,7 @@ spec:
               value: {{ .Values.oidc.authServerUrl | quote }}
             - name: QUARKUS_OIDC_TOKEN_ISSUER
               value: {{ .Values.oidc.tokenIssuer | quote }}
-            - name: QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION
+            - name: QUARKUS_HIBERNATE_ORM_SCHEMA_MANAGEMENT_STRATEGY
               value: drop-and-create
           readinessProbe:
             httpGet:
