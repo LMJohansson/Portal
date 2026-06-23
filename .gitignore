@@ -35,6 +35,10 @@ node/
 rsbuild.config.js
 rsbuild.config.d.ts
 
+# Module Federation generated type artefacts
+@mf-types/
+.__mf__temp/
+
 # Accidental ~ directory
 ~/
 
