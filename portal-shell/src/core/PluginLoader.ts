@@ -1,48 +1,33 @@
 /**
- * PluginLoader — dynamic Module Federation loader.
+ * PluginLoader — registers a federated remote with the MF runtime and
+ * returns a loader for its bridge module.
  *
- * Uses @module-federation/enhanced/runtime to:
- *   1. Register the remote at the given URL (once per scope)
- *   2. Load the exposed module
- *   3. Return the default React component
- *
- * All loaded modules are cached to avoid redundant network requests.
+ * The loader resolves to the MFE's bridge entry (the object returned by
+ * `createBridgeComponent`). `createRemoteAppComponent` from
+ * `@module-federation/bridge-react` consumes the loader and handles the
+ * mount / unmount lifecycle.
  */
 import { registerRemotes, loadRemote } from '@module-federation/runtime'
 import type { PluginManifest } from '../types/plugin'
 
 const registeredScopes = new Set<string>()
-const moduleCache = new Map<string, React.ComponentType>()
 
-export async function loadPlugin(plugin: PluginManifest): Promise<React.ComponentType> {
-  const cacheKey = `${plugin.scope}/${plugin.module}`
-
-  if (moduleCache.has(cacheKey)) {
-    return moduleCache.get(cacheKey)!
-  }
-
-  if (!registeredScopes.has(plugin.scope)) {
-    registerRemotes([{
+function ensureRegistered(plugin: PluginManifest): void {
+  if (registeredScopes.has(plugin.scope)) return
+  registerRemotes([
+    {
       name: plugin.scope,
       entry: plugin.remoteUrl,
       type: 'module',
-    }])
-    registeredScopes.add(plugin.scope)
-  }
-
-  // loadRemote expects "scope/Module" — strip the "./" prefix from plugin.module
-  // e.g. "./Plugin" → "Plugin"
-  const modulePath = plugin.module.replace(/^\.\//, '')
-  const mod = await loadRemote<{ default: React.ComponentType }>(`${plugin.scope}/${modulePath}`)
-  if (!mod) throw new Error(`Module "${plugin.scope}/${modulePath}" did not load`)
-  const Component = mod.default
-
-  moduleCache.set(cacheKey, Component)
-  return Component
+    },
+  ])
+  registeredScopes.add(plugin.scope)
 }
 
-/** Invalidate cached module (e.g. after hot-reload in dev) */
-export function evictPlugin(scope: string, module: string): void {
-  moduleCache.delete(`${scope}/${module}`)
-  registeredScopes.delete(scope)
+export function loadPluginModule(plugin: PluginManifest): Promise<unknown> {
+  ensureRegistered(plugin)
+  // loadRemote expects "scope/Module" — strip the "./" prefix from plugin.module
+  // (e.g. "./Plugin" → "Plugin")
+  const modulePath = plugin.module.replace(/^\.\//, '')
+  return loadRemote(`${plugin.scope}/${modulePath}`) as Promise<unknown>
 }

@@ -2,7 +2,7 @@ import axios, { type InternalAxiosRequestConfig } from 'axios'
 import { userManager } from '../auth/userManager'
 import type { PluginManifest } from '../types/plugin'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? '/api'
+const BASE_URL = import.meta.env.PUBLIC_API_URL ?? '/api'
 
 // Authenticated client — attaches Bearer token to every request.
 export const apiClient = axios.create({

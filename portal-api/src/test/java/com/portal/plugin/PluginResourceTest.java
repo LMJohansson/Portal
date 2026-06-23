@@ -200,7 +200,7 @@ class PluginResourceTest {
             .body("pluginId", equalTo("mfe-test"))
             .body("id", notNullValue())
             .body("createdAt", notNullValue())
-            .extract().path("id");
+            .extract().jsonPath().getLong("id");
     }
 
     @Test

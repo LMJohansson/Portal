@@ -1,15 +1,23 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { createBridgeComponent } from '@module-federation/bridge-react/v19'
+import { BrowserRouter } from '@module-federation/bridge-react/router-v7'
 import DashboardPage from './pages/DashboardPage'
 import './index.css'
 
-export default function DashboardPlugin() {
+export function DashboardRoot() {
   return (
-    <Routes>
-      <Route index element={<DashboardPage />} />
-      <Route path="*" element={<Navigate to="" replace />} />
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        <Route index element={<DashboardPage />} />
+        <Route path="*" element={<Navigate to="" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
+
+export default createBridgeComponent({
+  rootComponent: DashboardRoot,
+})
 
 export const pluginMeta = {
   name: 'mfe-dashboard',

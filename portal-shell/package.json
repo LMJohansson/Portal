@@ -4,35 +4,32 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 3000",
-    "build": "tsc -b && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview --port 3000"
+    "dev": "rsbuild dev",
+    "build": "tsc -b && rsbuild build",
+    "preview": "rsbuild preview"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.28.0",
-    "axios": "^1.6.8",
-    "lucide-react": "^0.577.0",
-    "oidc-client-ts": "^3.4.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-oidc-context": "^3.3.0",
-    "react-router-dom": "^6.22.3",
-    "zustand": "^4.5.2"
+    "@module-federation/bridge-react": "^2.6.0",
+    "@module-federation/runtime": "^2.6.0",
+    "@tanstack/react-query": "^5.101.1",
+    "axios": "^1.18.1",
+    "lucide-react": "^1.21.0",
+    "oidc-client-ts": "^3.5.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-oidc-context": "^3.3.1",
+    "react-router": "^7.18.0",
+    "react-router-dom": "^7.18.0",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@module-federation/vite": "^1.12.0",
-    "@tailwindcss/vite": "^4.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@typescript-eslint/eslint-plugin": "^7.6.0",
-    "@typescript-eslint/parser": "^7.6.0",
-    "@vitejs/plugin-react": "^4.3.0",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "eslint-plugin-react-refresh": "^0.4.6",
-    "tailwindcss": "^4.0.0",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.8"
+    "@module-federation/rsbuild-plugin": "^2.6.0",
+    "@rsbuild/core": "^2.0.15",
+    "@rsbuild/plugin-react": "^2.1.0",
+    "@rsbuild/plugin-tailwindcss": "^2.0.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.3.1",
+    "typescript": "^6.0.3"
   }
 }

@@ -48,7 +48,7 @@ public class Plugin extends PanacheEntityBase {
     @NotBlank
     @Size(max = 100)
     @Column(nullable = false, length = 100)
-    @Schema(description = "Module Federation scope name — must exactly match the `name` field in the MFE's vite.config federation config",
+    @Schema(description = "Module Federation scope name — must exactly match the `name` field in the MFE's rsbuild.config federation config",
             example = "mfe_reports", maxLength = 100, required = true)
     public String scope;
 

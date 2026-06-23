@@ -6,7 +6,7 @@ export interface PluginManifest {
   description: string
   /** Full URL to the Module Federation remoteEntry.js */
   remoteUrl: string
-  /** Module Federation scope (must match vite.config federation name in the MFE) */
+  /** Module Federation scope (must match rsbuild.config federation name in the MFE) */
   scope: string
   /** Exposed module path, e.g. "./Plugin" */
   module: string

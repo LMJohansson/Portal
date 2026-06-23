@@ -1,7 +1,7 @@
 import { Home, Star, Zap, Shield, ArrowRight } from 'lucide-react'
 
 const features = [
-  { icon: Zap, title: 'Module Federation', desc: 'Independent deployments via Vite Module Federation — no rebuild of the shell required.' },
+  { icon: Zap, title: 'Module Federation', desc: 'Independent deployments via Rspack Module Federation — no rebuild of the shell required.' },
   { icon: Shield, title: 'OIDC Auth', desc: 'Authorization Code + PKCE via Keycloak. Role-based access enforced at both the API and the plugin manifest level.' },
   { icon: Home, title: 'Plugin Registry', desc: 'Register, enable/disable and hot-swap micro-frontends at runtime via the admin panel.' },
   { icon: Star, title: 'Quarkus Backend', desc: 'Supersonic sub-atomic Java backend with OpenAPI docs and MicroProfile Health.' },
@@ -21,7 +21,7 @@ export default function HomePage() {
           </h1>
           <p className="text-blue-100 text-base leading-relaxed">
             This portal dynamically loads independent React applications at runtime
-            using Vite Module Federation. Each MFE is built, versioned and deployed
+            using Rspack Module Federation. Each MFE is built, versioned and deployed
             independently — the shell simply fetches the plugin manifest and mounts
             the remote components.
           </p>

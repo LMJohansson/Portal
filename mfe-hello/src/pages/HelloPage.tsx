@@ -27,7 +27,7 @@ export default function HelloPage() {
           {
             icon: Puzzle,
             title: 'Module Federation',
-            desc: 'Loaded via @module-federation/vite at runtime from remoteEntry.js.',
+            desc: 'Loaded via @module-federation/rsbuild-plugin at runtime from remoteEntry.js.',
           },
           {
             icon: Rocket,

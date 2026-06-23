@@ -30,10 +30,10 @@ dist/
 # Node.js runtime downloaded by frontend-maven-plugin
 node/
 
-# TypeScript / Vite build artefacts (compiled from .ts config files)
+# TypeScript / Rsbuild build artefacts (compiled from .ts config files)
 *.tsbuildinfo
-vite.config.js
-vite.config.d.ts
+rsbuild.config.js
+rsbuild.config.d.ts
 
 # Accidental ~ directory
 ~/

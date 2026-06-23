@@ -116,7 +116,7 @@ components:
           description: >
             Module Federation scope name.
             Must exactly match the `name` field in the MFE's
-            vite.config federation plugin configuration.
+            rsbuild.config federation plugin configuration.
           maxLength: 100
           example: mfe_reports
         module:

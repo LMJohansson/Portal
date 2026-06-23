@@ -78,7 +78,7 @@ portalShell:
 
 # ── Keycloak ──────────────────────────────────────────────────────────────
 keycloak:
-  image: quay.io/keycloak/keycloak:26.0
+  image: quay.io/keycloak/keycloak:26.6.3
   # WARNING: change this before deploying to any non-local environment
   adminPassword: admin
   resources:

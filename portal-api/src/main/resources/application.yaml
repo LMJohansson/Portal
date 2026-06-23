@@ -93,3 +93,18 @@ quarkus:
       schema-management:
         strategy: none
       sql-load-script: import.sql
+
+"%test":
+  quarkus:
+    # ── Database (Test — H2 in-memory) ───────────────────────────────────────
+    # Explicit datasource so @QuarkusTest boots without Dev Services. Required
+    # since both the H2 and PostgreSQL JDBC drivers are on the classpath and
+    # Quarkus will not guess a default db-kind for the test profile.
+    datasource:
+      db-kind: h2
+      jdbc:
+        url: "jdbc:h2:mem:portal;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
+    hibernate-orm:
+      schema-management:
+        strategy: drop-and-create
+      sql-load-script: import.sql

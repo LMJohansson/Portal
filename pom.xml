@@ -22,13 +22,13 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <quarkus.platform.version>3.27.2</quarkus.platform.version>
-    <node.version>v24.14.0</node.version>
+    <quarkus.platform.version>3.33.2</quarkus.platform.version>
+    <node.version>v24.17.0</node.version>
     <yarn.version>v1.22.22</yarn.version>
     <frontend-maven-plugin.version>1.15.1</frontend-maven-plugin.version>
-    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
-    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-    <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
+    <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
+    <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
   </properties>
 
   <build>

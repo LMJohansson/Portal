@@ -27,7 +27,9 @@ export default function AdminPluginsPage() {
 
   if (isLoading) return <div className="animate-pulse text-gray-400">Loading plugins…</div>
   if (isError) {
-    const code = (error as any)?.response?.status ?? 'network error'
+    const code =
+      (error as { response?: { status?: number } } | null)?.response?.status ??
+      'network error'
     return (
       <div className="text-red-500 p-4">
         Failed to load plugin registry (HTTP {String(code)}).{' '}

@@ -1,7 +1,8 @@
-import React, { Suspense, lazy } from 'react'
+import { useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
+import { createRemoteAppComponent } from '@module-federation/bridge-react'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { loadPlugin } from './PluginLoader'
+import { loadPluginModule } from './PluginLoader'
 import type { PluginManifest } from '../types/plugin'
 
 interface Props {
@@ -9,29 +10,35 @@ interface Props {
 }
 
 /**
- * DynamicRemote — renders a federated micro-frontend.
+ * DynamicRemote — renders a federated micro-frontend through
+ * `@module-federation/bridge-react`.
  *
- * Wraps the lazy-loaded MFE component in:
- *   - React.Suspense  → shows a spinner while the remote loads
- *   - ErrorBoundary   → catches render errors in the remote
+ * Each MFE is bridge-wrapped on its own side, so it owns its React root and
+ * its own router. The bridge mounts it into a host div and forwards
+ * `basename` so the MFE's BrowserRouter scopes to the plugin route.
  */
 export function DynamicRemote({ plugin }: Props) {
-  // lazy() is called outside render in a ref so the factory is stable
-  const LazyComponent = React.useMemo(
+  // Stable per (scope, remoteUrl, module) — rebuilds only on hot updates of
+  // the remote entry. The bridge caches the module internally.
+  const Remote = useMemo(
     () =>
-      lazy(async () => {
-        const Component = await loadPlugin(plugin)
-        return { default: Component }
+      createRemoteAppComponent({
+        loader: () =>
+          loadPluginModule(plugin) as Promise<{ default: unknown }>,
+        loading: <PluginLoadingSpinner name={plugin.name} />,
+        fallback: ({ error }: { error?: Error }) => (
+          <div className="p-6 text-red-600">
+            Failed to load <strong>{plugin.name}</strong>:{' '}
+            {error?.message ?? String(error)}
+          </div>
+        ),
       }),
-    // Rebuild only if the remote URL changes (e.g. hot update)
-    [plugin.scope, plugin.remoteUrl, plugin.module]
+    [plugin.scope, plugin.remoteUrl, plugin.module, plugin.name]
   )
 
   return (
     <ErrorBoundary pluginName={plugin.name}>
-      <Suspense fallback={<PluginLoadingSpinner name={plugin.name} />}>
-        <LazyComponent />
-      </Suspense>
+      <Remote basename={plugin.route} />
     </ErrorBoundary>
   )
 }
