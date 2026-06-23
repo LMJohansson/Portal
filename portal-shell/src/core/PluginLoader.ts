@@ -18,7 +18,11 @@ function ensureRegistered(plugin: PluginManifest): void {
     {
       name: plugin.scope,
       entry: plugin.remoteUrl,
-      type: 'module',
+      // Rspack / @module-federation/rsbuild-plugin emits a "global"-format
+      // remoteEntry.js (mf-manifest.json → remoteEntry.type === "global"),
+      // not the ESM "module" format Vite produced. Mismatch here surfaces at
+      // runtime as RUNTIME-002 "remote entry interface does not contain init".
+      type: 'global',
     },
   ])
   registeredScopes.add(plugin.scope)

@@ -1,4 +1,4 @@
-import type { RsbuildConfig } from '@rsbuild/core'
+import { defineConfig } from '@rsbuild/core'
 import { pluginReact } from '@rsbuild/plugin-react'
 import { pluginTailwindcss } from '@rsbuild/plugin-tailwindcss'
 import {
@@ -10,7 +10,7 @@ import {
  * Remote (mfe-hello) build. See mfe-home/rsbuild.config.ts for the rationale
  * behind injectStyles and assetPrefix.
  */
-const config: RsbuildConfig = {
+export default defineConfig({
   plugins: [
     pluginReact(),
     pluginTailwindcss(),
@@ -45,6 +45,4 @@ const config: RsbuildConfig = {
   output: {
     injectStyles: true,
   },
-}
-
-export default config
+})
