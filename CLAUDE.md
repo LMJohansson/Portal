@@ -24,8 +24,11 @@ older notes or commits, treat anything Vite-specific as obsolete:
   `fixMF2CjsNaming` Rollup workaround no longer exist and should not be reintroduced.
 - Tailwind is wired via `@rsbuild/plugin-tailwindcss` (Tailwind v4).
 - `dev.assetPrefix: 'http://localhost:<port>'` in each MFE makes dev chunk URLs
-  absolute so the shell can load them cross-origin. In production the MF runtime
-  resolves chunks relative to `remoteEntry.js`.
+  absolute so the shell can load them cross-origin. In production, chunks are
+  resolved relative to `remoteEntry.js` **only because** each MFE sets
+  `output.assetPrefix: 'auto'` — this is NOT Rsbuild's default (it defaults to
+  `/`, which makes federated async chunks 404 against the shell origin). Do not
+  remove the `'auto'` setting.
 
 ## Code Style
 

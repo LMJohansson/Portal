@@ -44,5 +44,10 @@ export default defineConfig({
   },
   output: {
     injectStyles: true,
+    // Production: resolve async chunk URLs relative to remoteEntry.js (the MFE
+    // origin) instead of the document origin (the shell). Without this, Rsbuild
+    // defaults publicPath to '/', so federated chunks 404 against the shell.
+    // Dev is unaffected — it uses dev.assetPrefix above.
+    assetPrefix: 'auto',
   },
 })
