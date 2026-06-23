@@ -1,4 +1,4 @@
-.PHONY: all install build dev clean test help \
+.PHONY: all install build dev clean test test-frontend help \
         k8s-start k8s-dev k8s-build k8s-deploy k8s-delete k8s-status k8s-pull \
         dev-api dev-mfe-home dev-mfe-dashboard dev-mfe-hello dev-shell dev-keycloak dev-db
 
@@ -56,8 +56,11 @@ dev-mfe-hello: ## Start mfe-hello dev server
 dev-shell: ## Start portal-shell dev server
 	$(YARN) workspace portal-shell run dev
 
-test: ## Run all tests
+test: ## Run backend tests (Quarkus/JUnit)
 	$(MVNW) -pl portal-api test
+
+test-frontend: ## Run all frontend tests (Rstest)
+	$(YARN) test:frontend
 
 clean: ## Clean all build artifacts
 	$(MVNW) clean

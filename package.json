@@ -14,7 +14,12 @@
     "build:mfe-dashboard": "node .yarn/releases/yarn-4.12.0.cjs workspace mfe-dashboard run build",
     "build:mfe-hello": "node .yarn/releases/yarn-4.12.0.cjs workspace mfe-hello run build",
     "build:shell": "node .yarn/releases/yarn-4.12.0.cjs workspace portal-shell run build",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:mfe-home": "node .yarn/releases/yarn-4.12.0.cjs workspace mfe-home run test",
+    "test:mfe-dashboard": "node .yarn/releases/yarn-4.12.0.cjs workspace mfe-dashboard run test",
+    "test:mfe-hello": "node .yarn/releases/yarn-4.12.0.cjs workspace mfe-hello run test",
+    "test:shell": "node .yarn/releases/yarn-4.12.0.cjs workspace portal-shell run test",
+    "test:frontend": "yarn test:mfe-home && yarn test:mfe-dashboard && yarn test:mfe-hello && yarn test:shell"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
